@@ -1,5 +1,6 @@
 ; This is the disassembly of the pair of bipolar ROMS on "my" AWS turbo
 ;  disk controller board.   This is code for a Signetic N8x300 processor.
+; -----------------------------------
 ;
 ; Notes   Tom Trebisky  1-16-2021, 3-6-2021
 ;
@@ -17,78 +18,9 @@
 ; on the AWS controller, the left bank has only the 256 byte disk buffer.
 ; The right bank has a variety of IO devices.
 ;
-; ----------------------------------------------------
-;
-; Addresses 0x30 to 0x3f are the 8x320 dual port register gadget
-; Addresses 0x48 to 0x5f are the 8x330 disk controller
-;
-; Details on the 8x330 chip
-;  0x48 to 0x57 is a 16 item "register file" (scratch)
-;
-;  0x48 - 0x49 are not used
-;  0x4a is used (scratchpad)
-;  0x4b is used (scratchpad)
-;  0x4c is used (scratchpad)
-;  0x4d is used (scratchpad)
-;  0x4e is used (scratchpad)
-;  0x4f is used (scratchpad)
-;  0x50 is used (scratchpad)
-;  0x51 is used (scratchpad)
-;  0x52 is used (scratchpad)
-;  0x53 - 0x57 is not used
-;
-;  0x58 (130) = - not used (invalid)
-;  0x59 (131) = - not used (invalid)
-;  0x5a (132) = Command and status 1
-;  0x5b (133) = Command and status 2
-;  0x5c (134) = Command and status 3
-;  0x5d (135) = Command and status 4
-;  0x5e (136) = Sector length (never used)
-;  0x5f (137) = Data
-;
-; -----
-; We also have 3 8 bit IO ports (N8x36 devices)
-; We read and write address 1 (data port)
-; We only write to address 2
-; We only read from address 3
-; -----
-;
-; Consider the device at 6A that we only read.
-; -- this is at address 3
-;
-; lets figure than IV7 is the LSB, and so is UD7.
-; Then the signals available on this chip are,
-; starting with the LSB:
-;
-;  UD7 - GAPDET*
-;  UD6 - 16Z+
-;  UD5 - AM+
-;  UD4 - REQ+
-;  UD3 - DRTYPE0-
-;  UD2 - FULL*
-;  UD1 - DMACK*
-;  UD0 - DRTYPE1-
-;
-; -----
-; Similarly, for the device at 5A that we only write
-; -- this is at address 2 (probably)
-; We can write the following, starting with the LSB:
-;
-;  UD7 - RDGATE+
-;  UD6 - BOZ+
-;  UD5 - WRTOP+
-;  UD4 - CRCTINE+
-;  UD3 - CRCRST+
-;  UD2 - DMARQ+
-;  UD1 - INT6+
-;  UD0 - REDWC*
-;
-; -----
-; The device at 5C is more mysterious.
-; -- we apparently ready and write it.
-; -- this is at address 1 (probably)
-; Its 8 outputs go to 5D (a 74LS299 device).
-; This is an 8 bit shift register
+; Note that the only value ever written to ivl (the left side)
+; is 0xff, which looks to me like something related to possible
+; addresses from 0 - 0xff, i.e. a 256 byte sector buffer.
 ;
 ; ===============================================
 ;
@@ -104,12 +36,63 @@
 
 ; After some initial inspection, I assigned the following values to
 ; various registers on the IV bus.
+;
+; -----
+;
+; First we have 3 8 bit IO ports (N8x36 devices)
+;
+; Note that these 8x36 devices get their address set by
+; some programming process (like burning a rom), so there
+; is no address decode logic on the schematic.
+; The chips just keep an eye on the IV bus and perk up
+; when they see their address get assigned.
+; They are bidirectional
 
-DATA_PORT    EQU  1h
-CMD_PORT     EQU  2h
-STATUS_PORT  EQU  3h
+DATA_PORT    EQU  1h	; read and write (chip 5C)
+CMD_PORT     EQU  2h	; write only (chip 5A)
+STATUS_PORT  EQU  3h	; read only (chip 6A)
+
+; Here are some notes on signals in the above 3 devices.
+; (this information is obtained by studying the schematic)
+
+; The device at chip location 5C looks like a data port.
+; -- we apparently read and write it.
+; -- this is at address 1
+; Its 8 outputs go to 5D (a 74LS299 device).
+;   This is an 8 bit shift register
+
+; -----
+; Similarly, for the device at chip location 5A that we only write
+; -- this is at address 2
+; We can write the following, starting with the LSB:
+;
+;  UD7 - RDGATE+
+;  UD6 - BOZ+
+;  UD5 - WRTOP+
+;  UD4 - CRCTINE+
+;  UD3 - CRCRST+
+;  UD2 - DMARQ+
+;  UD1 - INT6+
+;  UD0 - REDWC*
+;
+; Lastly consider the device at chip location 6A that we only read.
+; -- this is at address 3
+;
+; lets figure than IV7 is the LSB, and so is UD7.
+; Then the signals available on this chip are,
+; starting with the LSB:
+;
+;  UD7 - GAPDET*
+;  UD6 - 16Z+
+;  UD5 - AM+
+;  UD4 - REQ+
+;  UD3 - DRTYPE0-
+;  UD2 - FULL*
+;  UD1 - DMACK*
+;  UD0 - DRTYPE1-
 
 ; 8x320 bus interface device.
+; Addresses 0x30 to 0x3f are the 8x320 dual port bus interface gadget
 
 FLAG0        EQU  30h	; flag register 0 -- 0x8f
 FLAG1        EQU  31h	; flag register 1 -- 0x8e (holds handshake bit)
@@ -129,7 +112,9 @@ IOe          EQU  3eh	; CPU sees this at 0x81 (main status)
 IOf          EQU  3fh	; CPU sees this at 0x80 (DMA data)
 
 ; 8x330 FDC controller
+; Addresses 0x48 to 0x5f are the 8x330 disk controller
 ; the VAL registers serve as "scratch space" for the 8x300
+; (this is a 16 item "register file"
 
 VAL_0        EQU  48h	; never used
 VAL_1        EQU  49h	; never used
@@ -147,12 +132,17 @@ VAL_c        EQU  54h	; never used
 VAL_d        EQU  55h	; never used
 VAL_e        EQU  56h	; never used
 VAL_f        EQU  57h	; never used
+
 CSR1         EQU  5ah
 CSR2         EQU  5bh
 CSR3         EQU  5ch
 CSR4         EQU  5dh
+
 SECTOR_LEN   EQU  5eh	; never used
 FDC_DATA     EQU  5fh
+
+; ====================================================================
+; ====================================================================
 
 ; Execution begins here at address 0
 ; It is a mystery to me why execution begins first
