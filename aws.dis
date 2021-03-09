@@ -2320,11 +2320,9 @@ FDC_DATA     EQU  5fh
 07a9: a0 ab x07a9:  nzt     aux,x07ab
 07aa: e1 ff         jmp     x01ff
 07ab: e2 01 x07ab:  jmp     x0201
-07ac: e0 18         jmp     x0018
 
-; no path to the following ...
-
-07ad: 19 00         move    sriv[13:6],aux
+07ac: e0 18         jmp     x0018		; no path to this
+07ad: 19 00         move    sriv[13:6],aux	; or this either
 07ae: 00 00         nop     
 07af: 00 00         nop     
 
