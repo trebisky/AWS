@@ -54,8 +54,8 @@
 ; They are bidirectional
 
 DATA_PORT    EQU  1h	; read and write (chip 5C)
-CMD_PORT     EQU  2h	; write only (chip 5A)
-ST_PORT      EQU  3h	; read only (chip 6A)
+HD_CMD       EQU  2h	; write only (chip 5A)
+HD_STATUS    EQU  3h	; read only (chip 6A)
 
 ; Here are some notes on signals in the above 3 devices.
 ; (this information is obtained by studying the schematic)
@@ -74,7 +74,7 @@ ST_PORT      EQU  3h	; read only (chip 6A)
 ; Similarly, for the device at chip location 5A that we only write
 ; -- this is at address 2
 :
-;  "CMD_PORT"
+;  "HD_CMD"
 ;
 ; We can write the following, starting with the LSB:
 ;
@@ -109,9 +109,9 @@ ST_PORT      EQU  3h	; read only (chip 6A)
 
 FLAG0        EQU  30h	; flag register 0 -- 0x8f
 FLAG1        EQU  31h	; flag register 1 -- 0x8e (holds handshake bit)
-IO2          EQU  32h	; CPU sees this at 0x8d (status)
-IO3          EQU  33h	; - never used
-IO4          EQU  34h	; - never used
+STATUS       EQU  32h	; CPU sees this at 0x8d (status)
+IO3          EQU  33h	; - used indirectly for FD
+IO4          EQU  34h	; - used indirectly for HD
 IO5          EQU  35h	; - never used
 IO6          EQU  36h	; - never used
 IO7          EQU  37h	; - never used
@@ -121,8 +121,11 @@ IOa          EQU  3ah	; - never used
 IOb          EQU  3bh	; CPU sees this at 0x84
 IOc          EQU  3ch	; CPU sees this at 0x83
 COMMAND      EQU  3dh	; CPU sees this at 0x82 (command)
-STATUS       EQU  3eh	; CPU sees this at 0x81 (main status)
+M_STATUS     EQU  3eh	; CPU sees this at 0x81 (main status)
 DMA          EQU  3fh	; CPU sees this at 0x80 (DMA data)
+
+; all data moving between the CPU and the AWS passes through the DMA data
+; register (under DMA control via an 8257 chip).
 
 ; 8x330 FDC controller
 ; Addresses 0x48 to 0x5f are the 8x330 disk controller
@@ -173,15 +176,15 @@ FDC_DATA     EQU  5fh
 0005: db 40         xmit    0h,driv[5:4]
 0006: cf 30         xmit    FLAG0,ivr
 0007: c0 41         xmit    41h,aux
-0008: 00 1f         move    aux,driv
-0009: cf 02         xmit    CMD_PORT,ivr
-000a: c1 80         xmit    80h,r1
+0008: 00 1f         move    aux,driv		; FLAG0 = 0x41
+0009: cf 02         xmit    HD_CMD,ivr
+000a: c1 80         xmit    80h,r1		; HD_CMD = 0x80
 000b: 01 1f         move    r1,driv
 000c: c1 00         xmit    0h,r1		; r1 = 0
 000d: cf 31         xmit    FLAG1,ivr
 000e: 01 1f         move    r1,driv		; FLAG1 = 0
-000f: cf 3e         xmit    STATUS,ivr
-0010: 01 1f         move    r1,driv		; STATUS = 0
+000f: cf 3e         xmit    M_STATUS,ivr
+0010: 01 1f         move    r1,driv		; M_STATUS = 0
 0011: cf 3b         xmit    IOb,ivr
 0012: df 40         xmit    0h,driv[1:0]
 0013: d8 20         xmit    0h,driv[7]
@@ -201,15 +204,17 @@ FDC_DATA     EQU  5fh
 0019: da 20         xmit    0h,driv[5]		; clear the handshake bit
 001a: cf 5a         xmit    CSR1,ivr
 001b: c0 ff         xmit    0ffh,aux
-001c: 00 1f         move    aux,driv
+001c: 00 1f         move    aux,driv		; CSR1 = 0xff
 001d: c0 40         xmit    40h,aux
 001e: cf 5b         xmit    CSR2,ivr
-001f: 00 1f         move    aux,driv
+001f: 00 1f         move    aux,driv		; CSR2 = 0x40
 0020: cf 5f         xmit    FDC_DATA,ivr
-0021: 00 1f         move    aux,driv
+0021: 00 1f         move    aux,driv		; FDC_DATA = 0x40
 
 ; Now we check a bit in VAL_2 (a scratchpad register).
-; This gets set zero above, how would get set non-zero?
+; This gets set zero above, how would it get set non-zero?
+; (well, it is zero on startup, but could be non-zero if
+; we branch to x0018 from below).
 
 0022: cf 4a         xmit    VAL_2,ivr
 0023: ba 25         nzt     sriv[5],x0025
@@ -229,6 +234,10 @@ FDC_DATA     EQU  5fh
 002e: da 20         xmit    0h,driv[5]
 002f: cf 3b         xmit    IOb,ivr
 0030: e0 40         jmp     x0040
+
+; An odd business, the above jump just bypasses all of
+; the following nops.  Why not get rid of both them and
+; the jump?
 
 0031: 00 00         nop     
 0032: 00 00         nop     
@@ -280,7 +289,7 @@ FDC_DATA     EQU  5fh
 0055: c0 01         xmit    1h,aux
 0056: 61 01         xor     r1,r1
 0057: 62 02         xor     r2,r2
-0058: cf 3e         xmit    STATUS,ivr
+0058: cf 3e         xmit    M_STATUS,ivr
 0059: 01 3f         move    r1,driv[0]
 005a: 02 3e         move    r2,driv[1]
 005b: cf 3b         xmit    IOb,ivr
@@ -293,7 +302,7 @@ FDC_DATA     EQU  5fh
 0062: a0 7a         nzt     aux,x007a
 0063: c9 01 x0063:  xmit    1h,r11
 0064: e7 3f         jmp     x073f
-0065: cf 3e x0065:  xmit    STATUS,ivr
+0065: cf 3e x0065:  xmit    M_STATUS,ivr
 0066: 1f 40         move    sriv[1:0],aux
 0067: cf 3b         xmit    IOb,ivr
 0068: 00 5f         move    aux,driv[1:0]
@@ -307,7 +316,7 @@ FDC_DATA     EQU  5fh
 006e: e0 8a x006e:  jmp     x008a
 
 006f: c5 00 x006f:  xmit    0h,r5
-0070: cf 3e         xmit    STATUS,ivr
+0070: cf 3e         xmit    M_STATUS,ivr
 0071: c0 01         xmit    1h,aux
 0072: 1f 21         move    sriv[0],r1
 0073: 61 01         xor     r1,r1
@@ -319,7 +328,7 @@ FDC_DATA     EQU  5fh
 0078: e7 3a         jmp     x073a
 0079: e0 5f x0079:  jmp     x005f
 007a: c5 01 x007a:  xmit    1h,r5
-007b: cf 3e         xmit    STATUS,ivr
+007b: cf 3e         xmit    M_STATUS,ivr
 007c: c0 01         xmit    1h,aux
 007d: 1e 21         move    sriv[1],r1
 007e: 61 01         xor     r1,r1
@@ -332,7 +341,7 @@ FDC_DATA     EQU  5fh
 0084: e0 63 x0084:  jmp     x0063
 
 0085: c0 33 x0085:  xmit    33h,aux
-0086: 25 0f         add     r5,ivr
+0086: 25 0f         add     r5,ivr	; ivr = 33 + drive
 0087: c0 c0         xmit    0c0h,aux
 0088: 25 1f         add     r5,driv
 0089: e7 b0         jmp     x07b0
@@ -341,6 +350,9 @@ FDC_DATA     EQU  5fh
 ; the bottom 4 bits give the command and
 ; and handled via the jump table below.
 ; bit 6 gives the drive (0 for floppy, 1 for hd)
+
+; NOTE:  It seems to be a convention that r5 always holds
+; the drive selector (0 for FD and 1 for HD).
 
 008a: cf 3d x008a:  xmit    COMMAND,ivr
 008b: 19 25         move    sriv[6],r5
@@ -375,14 +387,14 @@ FDC_DATA     EQU  5fh
 009f: e7 3a         jmp     x073a
 
 00a0: c0 33 x00a0:  xmit    33h,aux
-00a1: 25 0f         add     r5,ivr
+00a1: 25 0f         add     r5,ivr	; ivr = 0x33 + drive
 00a2: c0 80         xmit    80h,aux
 00a3: 25 1f         add     r5,driv
 00a4: cf 3b         xmit    IOb,ivr
 00a5: d8 21         xmit    1h,driv[7]
-00a6: cf 3e x00a6:  xmit    STATUS,ivr
+00a6: cf 3e x00a6:  xmit    M_STATUS,ivr
 00a7: da 21         xmit    1h,driv[5]
-00a8: cf 02         xmit    CMD_PORT,ivr
+00a8: cf 02         xmit    HD_CMD,ivr
 00a9: d9 21         xmit    1h,driv[6]
 00aa: e7 a5         jmp     x07a5
 
@@ -395,18 +407,21 @@ FDC_DATA     EQU  5fh
 
 00ab: c0 33 x00ab:  xmit    33h,aux
 00ac: 25 01         add     r5,r1
-00ad: cf 3e         xmit    STATUS,ivr
+00ad: cf 3e         xmit    M_STATUS,ivr
 00ae: da 21         xmit    1h,driv[5]
 00af: c9 07         xmit    7h,r11
 00b0: e7 2d         jmp     x072d
+
 00b1: c0 35 x00b1:  xmit    35h,aux
 00b2: 25 01         add     r5,r1
 00b3: c9 08         xmit    8h,r11
 00b4: e7 2d         jmp     x072d
+
 00b5: c0 37 x00b5:  xmit    37h,aux
 00b6: 25 01         add     r5,r1
 00b7: c9 09         xmit    9h,r11
 00b8: e7 2d         jmp     x072d
+
 00b9: e0 ba x00b9:  jmp     x00ba
 
 ; ---------------------------
@@ -418,7 +433,7 @@ FDC_DATA     EQU  5fh
 
 00ba: c9 0a x00ba:  xmit    0ah,r11
 00bb: e6 3d         jmp     x063d
-00bc: cf 3e x00bc:  xmit    STATUS,ivr
+00bc: cf 3e x00bc:  xmit    M_STATUS,ivr
 00bd: da 21         xmit    1h,driv[5]
 00be: c9 0b         xmit    0bh,r11
 00bf: e6 4f         jmp     x064f
@@ -428,7 +443,8 @@ FDC_DATA     EQU  5fh
 00c3: 25 01         add     r5,r1
 00c4: c9 0d         xmit    0dh,r11
 00c5: e7 2d         jmp     x072d
-00c6: cf 3e x00c6:  xmit    STATUS,ivr
+
+00c6: cf 3e x00c6:  xmit    M_STATUS,ivr
 00c7: c0 00         xmit    0h,aux
 00c8: 00 1f         move    aux,driv
 00c9: e0 d5         jmp     x00d5
@@ -449,6 +465,7 @@ FDC_DATA     EQU  5fh
 00ce: 25 01         add     r5,r1
 00cf: c9 0e         xmit    0eh,r11
 00d0: e7 2d         jmp     x072d
+
 00d1: cf 4a x00d1:  xmit    VAL_2,ivr
 00d2: 83 e3         xec     x00e3,r3
 00d3: c9 0f         xmit    0fh,r11
@@ -460,6 +477,7 @@ FDC_DATA     EQU  5fh
 00d9: 25 01         add     r5,r1
 00da: c9 11         xmit    11h,r11
 00db: e7 2d         jmp     x072d
+
 00dc: cf 3b x00dc:  xmit    IOb,ivr
 00dd: d8 20         xmit    0h,driv[7]
 00de: e7 a5         jmp     x07a5
@@ -484,7 +502,7 @@ FDC_DATA     EQU  5fh
 ; - sectors per track
 ; - drive present
 
-00e7: cf 3e x00e7:  xmit    STATUS,ivr
+00e7: cf 3e x00e7:  xmit    M_STATUS,ivr
 00e8: da 21         xmit    1h,driv[5]
 00e9: c9 12         xmit    12h,r11
 00ea: e7 4b         jmp     x074b
@@ -512,7 +530,7 @@ FDC_DATA     EQU  5fh
 00ff: 00 00         nop     
 
 0100: 81 04 x0100:  xec     x0104,r1
-0101: cf 3e         xmit    STATUS,ivr
+0101: cf 3e         xmit    M_STATUS,ivr
 0102: da 20         xmit    0h,driv[5]
 0103: e0 ee         jmp     x00ee
 
@@ -637,7 +655,7 @@ FDC_DATA     EQU  5fh
 0162: a0 64 x0162:  nzt     aux,x0164
 0163: e1 65         jmp     x0165
 0164: e0 9e x0164:  jmp     x009e
-0165: cf 3e x0165:  xmit    STATUS,ivr
+0165: cf 3e x0165:  xmit    M_STATUS,ivr
 0166: db 21         xmit    1h,driv[4]
 0167: c9 1b         xmit    1bh,r11
 0168: e6 3d         jmp     x063d
@@ -654,7 +672,7 @@ FDC_DATA     EQU  5fh
 0173: 00 7e         move    aux,driv[3:1]
 0174: c9 1e         xmit    1eh,r11
 0175: e7 68         jmp     x0768
-0176: cf 02 x0176:  xmit    CMD_PORT,ivr
+0176: cf 02 x0176:  xmit    HD_CMD,ivr
 0177: df 20         xmit    0h,driv[0]
 0178: db 21         xmit    1h,driv[4]
 0179: dc 20         xmit    0h,driv[3]
@@ -666,16 +684,16 @@ FDC_DATA     EQU  5fh
 017f: 1f 01         move    sriv,r1
 0180: cf 4c         xmit    VAL_4,ivr
 0181: 1f 02         move    sriv,r2
-0182: cf 02         xmit    CMD_PORT,ivr
+0182: cf 02         xmit    HD_CMD,ivr
 0183: da 21         xmit    1h,driv[5]
 0184: da 20         xmit    0h,driv[5]
-0185: cf 03         xmit    ST_PORT,ivr
+0185: cf 03         xmit    HD_STATUS,ivr
 0186: b9 26 x0186:  nzt     sriv[6],x0186
 0187: b9 29 x0187:  nzt     sriv[6],x0189
 0188: e1 87         jmp     x0187
 0189: cf 3f x0189:  xmit    DMA,ivr
 018a: 1f 03         move    sriv,r3
-018b: cf 02         xmit    CMD_PORT,ivr
+018b: cf 02         xmit    HD_CMD,ivr
 018c: da 21         xmit    1h,driv[5]
 018d: da 20         xmit    0h,driv[5]
 018e: cf 4f         xmit    VAL_7,ivr
@@ -691,97 +709,97 @@ FDC_DATA     EQU  5fh
 0198: e1 96         jmp     x0196
 0199: cf 5d x0199:  xmit    CSR4,ivr
 019a: b9 39         nzt     sriv[6],x0199
-019b: cf 03         xmit    ST_PORT,ivr
+019b: cf 03         xmit    HD_STATUS,ivr
 019c: bc 3c x019c:  nzt     sriv[3],x019c
-019d: cf 03 x019d:  xmit    ST_PORT,ivr
+019d: cf 03 x019d:  xmit    HD_STATUS,ivr
 019e: bc 3e x019e:  nzt     sriv[3],x019e
 019f: 26 06         add     r6,r6
 01a0: a6 9d         nzt     r6,x019d
-01a1: cf 03         xmit    ST_PORT,ivr
+01a1: cf 03         xmit    HD_STATUS,ivr
 01a2: bc 22 x01a2:  nzt     sriv[3],x01a2
 01a3: c6 eb         xmit    0ebh,r6
-01a4: cf 03         xmit    ST_PORT,ivr
+01a4: cf 03         xmit    HD_STATUS,ivr
 01a5: bc 25 x01a5:  nzt     sriv[3],x01a5
 01a6: cf 01         xmit    DATA_PORT,ivr
 01a7: c5 a1         xmit    0a1h,r5
 01a8: 05 1f         move    r5,driv
-01a9: cf 03         xmit    ST_PORT,ivr
+01a9: cf 03         xmit    HD_STATUS,ivr
 01aa: bc 2a x01aa:  nzt     sriv[3],x01aa
-01ab: cf 02         xmit    CMD_PORT,ivr
+01ab: cf 02         xmit    HD_CMD,ivr
 01ac: db 20         xmit    0h,driv[4]
-01ad: cf 03         xmit    ST_PORT,ivr
+01ad: cf 03         xmit    HD_STATUS,ivr
 01ae: bc 2e x01ae:  nzt     sriv[3],x01ae
 01af: cf 01         xmit    DATA_PORT,ivr
 01b0: c5 fe         xmit    0feh,r5
 01b1: 05 1f         move    r5,driv
-01b2: cf 03         xmit    ST_PORT,ivr
+01b2: cf 03         xmit    HD_STATUS,ivr
 01b3: bc 33 x01b3:  nzt     sriv[3],x01b3
 01b4: cf 01         xmit    DATA_PORT,ivr
 01b5: 01 1f         move    r1,driv
-01b6: cf 03         xmit    ST_PORT,ivr
+01b6: cf 03         xmit    HD_STATUS,ivr
 01b7: bc 37 x01b7:  nzt     sriv[3],x01b7
 01b8: cf 01         xmit    DATA_PORT,ivr
 01b9: 02 1f         move    r2,driv
-01ba: cf 03         xmit    ST_PORT,ivr
+01ba: cf 03         xmit    HD_STATUS,ivr
 01bb: bc 3b x01bb:  nzt     sriv[3],x01bb
 01bc: cf 01         xmit    DATA_PORT,ivr
 01bd: 03 1f         move    r3,driv
-01be: cf 03         xmit    ST_PORT,ivr
+01be: cf 03         xmit    HD_STATUS,ivr
 01bf: bc 3f x01bf:  nzt     sriv[3],x01bf
-01c0: cf 02         xmit    CMD_PORT,ivr
+01c0: cf 02         xmit    HD_CMD,ivr
 01c1: dc 21         xmit    1h,driv[3]
-01c2: cf 03         xmit    ST_PORT,ivr
+01c2: cf 03         xmit    HD_STATUS,ivr
 01c3: bc 23 x01c3:  nzt     sriv[3],x01c3
 01c4: cf 01         xmit    DATA_PORT,ivr
 01c5: c5 00         xmit    0h,r5
 01c6: 05 1f         move    r5,driv
-01c7: cf 03         xmit    ST_PORT,ivr
+01c7: cf 03         xmit    HD_STATUS,ivr
 01c8: bc 28 x01c8:  nzt     sriv[3],x01c8
-01c9: cf 02         xmit    CMD_PORT,ivr
+01c9: cf 02         xmit    HD_CMD,ivr
 01ca: dc 20         xmit    0h,driv[3]
-01cb: cf 03 x01cb:  xmit    ST_PORT,ivr
+01cb: cf 03 x01cb:  xmit    HD_STATUS,ivr
 01cc: bc 2c x01cc:  nzt     sriv[3],x01cc
 01cd: 26 06         add     r6,r6
 01ce: a6 cb         nzt     r6,x01cb
-01cf: cf 03         xmit    ST_PORT,ivr
+01cf: cf 03         xmit    HD_STATUS,ivr
 01d0: bc 30 x01d0:  nzt     sriv[3],x01d0
 01d1: c6 00         xmit    0h,r6
-01d2: cf 03         xmit    ST_PORT,ivr
+01d2: cf 03         xmit    HD_STATUS,ivr
 01d3: bc 33 x01d3:  nzt     sriv[3],x01d3
-01d4: cf 02         xmit    CMD_PORT,ivr
+01d4: cf 02         xmit    HD_CMD,ivr
 01d5: db 21         xmit    1h,driv[4]
-01d6: cf 03         xmit    ST_PORT,ivr
+01d6: cf 03         xmit    HD_STATUS,ivr
 01d7: bc 37 x01d7:  nzt     sriv[3],x01d7
 01d8: cf 01         xmit    DATA_PORT,ivr
 01d9: c5 a1         xmit    0a1h,r5
 01da: 05 1f         move    r5,driv
-01db: cf 03         xmit    ST_PORT,ivr
+01db: cf 03         xmit    HD_STATUS,ivr
 01dc: bc 3c x01dc:  nzt     sriv[3],x01dc
-01dd: cf 02         xmit    CMD_PORT,ivr
+01dd: cf 02         xmit    HD_CMD,ivr
 01de: db 20         xmit    0h,driv[4]
-01df: cf 03         xmit    ST_PORT,ivr
+01df: cf 03         xmit    HD_STATUS,ivr
 01e0: bc 20 x01e0:  nzt     sriv[3],x01e0
 01e1: cf 01         xmit    DATA_PORT,ivr
 01e2: c5 f8         xmit    0f8h,r5
 01e3: 05 1f         move    r5,driv
-01e4: cf 03         xmit    ST_PORT,ivr
+01e4: cf 03         xmit    HD_STATUS,ivr
 01e5: bc 25 x01e5:  nzt     sriv[3],x01e5
 01e6: cf 01         xmit    DATA_PORT,ivr
 01e7: 04 1f         move    r4,driv
-01e8: cf 03 x01e8:  xmit    ST_PORT,ivr
+01e8: cf 03 x01e8:  xmit    HD_STATUS,ivr
 01e9: bc 29 x01e9:  nzt     sriv[3],x01e9
 01ea: 26 06         add     r6,r6
 01eb: a6 e8         nzt     r6,x01e8
-01ec: cf 02         xmit    CMD_PORT,ivr
+01ec: cf 02         xmit    HD_CMD,ivr
 01ed: dc 21         xmit    1h,driv[3]
-01ee: cf 03         xmit    ST_PORT,ivr
+01ee: cf 03         xmit    HD_STATUS,ivr
 01ef: bc 2f x01ef:  nzt     sriv[3],x01ef
 01f0: c6 ea         xmit    0eah,r6
-01f1: cf 03         xmit    ST_PORT,ivr
+01f1: cf 03         xmit    HD_STATUS,ivr
 01f2: bc 32 x01f2:  nzt     sriv[3],x01f2
-01f3: cf 03         xmit    ST_PORT,ivr
+01f3: cf 03         xmit    HD_STATUS,ivr
 01f4: bc 34 x01f4:  nzt     sriv[3],x01f4
-01f5: cf 02         xmit    CMD_PORT,ivr
+01f5: cf 02         xmit    HD_CMD,ivr
 01f6: dc 20         xmit    0h,driv[3]
 01f7: db 21         xmit    1h,driv[4]
 01f8: 29 09         add     r11,r11
@@ -793,21 +811,21 @@ FDC_DATA     EQU  5fh
 01fe: e7 a9         jmp     x07a9
 01ff: c0 01 x01ff:  xmit    1h,aux
 0200: e1 9d         jmp     x019d
-0201: cf 02 x0201:  xmit    CMD_PORT,ivr
+0201: cf 02 x0201:  xmit    HD_CMD,ivr
 0202: da 21         xmit    1h,driv[5]
 0203: da 20         xmit    0h,driv[5]
 0204: e1 ff         jmp     x01ff
 0205: c0 51 x0205:  xmit    51h,aux
 0206: 00 0f         move    aux,ivr
 0207: 1f 05         move    sriv,r5
-0208: cf 03         xmit    ST_PORT,ivr
+0208: cf 03         xmit    HD_STATUS,ivr
 0209: bc 29 x0209:  nzt     sriv[3],x0209
-020a: cf 03         xmit    ST_PORT,ivr
+020a: cf 03         xmit    HD_STATUS,ivr
 020b: bc 2b x020b:  nzt     sriv[3],x020b
 020c: c4 00 x020c:  xmit    0h,r4
 020d: cf 5a         xmit    CSR1,ivr
 020e: d8 21         xmit    1h,driv[7]
-020f: cf 02         xmit    CMD_PORT,ivr
+020f: cf 02         xmit    HD_CMD,ivr
 0210: dd 20         xmit    0h,driv[2]
 0211: c9 1f         xmit    1fh,r11
 0212: e7 37         jmp     x0737
@@ -815,15 +833,15 @@ FDC_DATA     EQU  5fh
 0214: 25 0f         add     r5,ivr
 0215: 04 00         move    r4,aux
 0216: 25 1f         add     r5,driv
-0217: cf 3e         xmit    STATUS,ivr
+0217: cf 3e         xmit    M_STATUS,ivr
 0218: da 21         xmit    1h,driv[5]
-0219: cf 02         xmit    CMD_PORT,ivr
+0219: cf 02         xmit    HD_CMD,ivr
 021a: d9 21         xmit    1h,driv[6]
 021b: 04 00         move    r4,aux
 021c: 25 00         add     r5,aux
 021d: c9 20         xmit    20h,r11
 021e: e7 2f         jmp     x072f
-021f: cf 3e x021f:  xmit    STATUS,ivr
+021f: cf 3e x021f:  xmit    M_STATUS,ivr
 0220: db 20         xmit    0h,driv[4]
 0221: c9 21         xmit    21h,r11
 0222: e7 3f         jmp     x073f
@@ -1059,7 +1077,7 @@ FDC_DATA     EQU  5fh
 0305: 29 00         add     r11,aux
 0306: a0 08         nzt     aux,x0308
 0307: e2 5e         jmp     x025e
-0308: cf 02 x0308:  xmit    CMD_PORT,ivr
+0308: cf 02 x0308:  xmit    HD_CMD,ivr
 0309: da 21         xmit    1h,driv[5]
 030a: da 20         xmit    0h,driv[5]
 030b: e2 55         jmp     x0255
@@ -1085,9 +1103,9 @@ FDC_DATA     EQU  5fh
 031a: a0 1c x031a:  nzt     aux,x031c
 031b: e3 1d         jmp     x031d
 031c: e0 9e x031c:  jmp     x009e
-031d: cf 02 x031d:  xmit    CMD_PORT,ivr
+031d: cf 02 x031d:  xmit    HD_CMD,ivr
 031e: d9 20         xmit    0h,driv[6]
-031f: cf 3e         xmit    STATUS,ivr
+031f: cf 3e         xmit    M_STATUS,ivr
 0320: db 21         xmit    1h,driv[4]
 0321: da 20         xmit    0h,driv[5]
 0322: c9 23         xmit    23h,r11
@@ -1097,16 +1115,20 @@ FDC_DATA     EQU  5fh
 0326: e2 24 x0326:  jmp     x0224
 0327: c9 24 x0327:  xmit    24h,r11
 0328: e7 4b         jmp     x074b
+
 0329: cf 3c x0329:  xmit    IOc,ivr
 032a: 80 2e         xec     x032e,aux
 032b: c9 25         xmit    25h,r11
 032c: e6 94         jmp     x0694
 032d: e3 33 x032d:  jmp     x0333
+
+; table for above xec follows
 032e: df 61 x032e:  xmit    1h,driv[2:0]
 032f: df 61         xmit    1h,driv[2:0]
 0330: df 63         xmit    3h,driv[2:0]
 0331: df 65         xmit    5h,driv[2:0]
 0332: df 63         xmit    3h,driv[2:0]
+
 0333: cf 4b x0333:  xmit    VAL_3,ivr
 0334: 1b 60         move    sriv[6:4],aux
 0335: cf 5c x0335:  xmit    CSR3,ivr
@@ -1154,7 +1176,7 @@ FDC_DATA     EQU  5fh
 035d: c2 10         xmit    10h,r2
 035e: c2 20         xmit    20h,r2
 035f: c2 02         xmit    2h,r2
-0360: cf 02 x0360:  xmit    CMD_PORT,ivr
+0360: cf 02 x0360:  xmit    HD_CMD,ivr
 0361: df 20         xmit    0h,driv[0]
 0362: de 20         xmit    0h,driv[1]
 0363: c4 40         xmit    40h,r4
@@ -1166,7 +1188,7 @@ FDC_DATA     EQU  5fh
 0369: a0 6b x0369:  nzt     aux,x036b
 036a: e3 6c         jmp     x036c
 036b: e3 43 x036b:  jmp     x0343
-036c: cf 02 x036c:  xmit    CMD_PORT,ivr
+036c: cf 02 x036c:  xmit    HD_CMD,ivr
 036d: db 21         xmit    1h,driv[4]
 036e: c1 f7         xmit    0f7h,r1
 036f: dd 21         xmit    1h,driv[2]
@@ -1176,52 +1198,52 @@ FDC_DATA     EQU  5fh
 0373: cf 5a         xmit    CSR1,ivr
 0374: d8 20         xmit    0h,driv[7]
 0375: c0 01         xmit    1h,aux
-0376: cf 03         xmit    ST_PORT,ivr
+0376: cf 03         xmit    HD_STATUS,ivr
 0377: bc 37 x0377:  nzt     sriv[3],x0377
-0378: cf 02         xmit    CMD_PORT,ivr
+0378: cf 02         xmit    HD_CMD,ivr
 0379: dc 20         xmit    0h,driv[3]
-037a: cf 03 x037a:  xmit    ST_PORT,ivr
+037a: cf 03 x037a:  xmit    HD_STATUS,ivr
 037b: bc 3b x037b:  nzt     sriv[3],x037b
 037c: 21 01         add     r1,r1
 037d: a1 7a         nzt     r1,x037a
-037e: cf 03         xmit    ST_PORT,ivr
+037e: cf 03         xmit    HD_STATUS,ivr
 037f: bc 3f x037f:  nzt     sriv[3],x037f
-0380: cf 02         xmit    CMD_PORT,ivr
+0380: cf 02         xmit    HD_CMD,ivr
 0381: db 20         xmit    0h,driv[4]
-0382: cf 03         xmit    ST_PORT,ivr
+0382: cf 03         xmit    HD_STATUS,ivr
 0383: bc 23 x0383:  nzt     sriv[3],x0383
 0384: cf 01         xmit    DATA_PORT,ivr
 0385: c2 f8         xmit    0f8h,r2
 0386: 02 1f         move    r2,driv
-0387: cf 03         xmit    ST_PORT,ivr
+0387: cf 03         xmit    HD_STATUS,ivr
 0388: bc 28 x0388:  nzt     sriv[3],x0388
 0389: cf 01         xmit    DATA_PORT,ivr
 038a: 17 1f         move    sliv,driv
 038b: c7 ff         xmit    0ffh,ivl
-038c: cf 03         xmit    ST_PORT,ivr
+038c: cf 03         xmit    HD_STATUS,ivr
 038d: bc 2d x038d:  nzt     sriv[3],x038d
 038e: cf 01         xmit    DATA_PORT,ivr
 038f: 17 1f         move    sliv,driv
 0390: c7 ff         xmit    0ffh,ivl
-0391: cf 03         xmit    ST_PORT,ivr
+0391: cf 03         xmit    HD_STATUS,ivr
 0392: ba 2d         nzt     sriv[5],x038d
 0393: bc 33 x0393:  nzt     sriv[3],x0393
 0394: cf 01         xmit    DATA_PORT,ivr
 0395: 17 1f         move    sliv,driv
-0396: cf 03         xmit    ST_PORT,ivr
+0396: cf 03         xmit    HD_STATUS,ivr
 0397: bc 37 x0397:  nzt     sriv[3],x0397
-0398: cf 02         xmit    CMD_PORT,ivr
+0398: cf 02         xmit    HD_CMD,ivr
 0399: dc 21         xmit    1h,driv[3]
-039a: cf 03         xmit    ST_PORT,ivr
+039a: cf 03         xmit    HD_STATUS,ivr
 039b: bc 3b x039b:  nzt     sriv[3],x039b
-039c: cf 03         xmit    ST_PORT,ivr
+039c: cf 03         xmit    HD_STATUS,ivr
 039d: bc 3d x039d:  nzt     sriv[3],x039d
-039e: cf 03         xmit    ST_PORT,ivr
+039e: cf 03         xmit    HD_STATUS,ivr
 039f: bc 3f x039f:  nzt     sriv[3],x039f
 03a0: e7 98         jmp     x0798
 03a1: cf 5a x03a1:  xmit    CSR1,ivr
 03a2: d8 21         xmit    1h,driv[7]
-03a3: cf 02         xmit    CMD_PORT,ivr
+03a3: cf 02         xmit    HD_CMD,ivr
 03a4: dd 20         xmit    0h,driv[2]
 03a5: cf 4e x03a5:  xmit    VAL_6,ivr
 03a6: c0 01         xmit    1h,aux
@@ -1235,6 +1257,7 @@ FDC_DATA     EQU  5fh
 03ae: a0 b0         nzt     aux,x03b0
 03af: e3 b1         jmp     x03b1
 03b0: e3 39 x03b0:  jmp     x0339
+
 03b1: df 01 x03b1:  xmit    1h,driv
 03b2: cf 3c         xmit    IOc,ivr
 03b3: 1f 60         move    sriv[2:0],aux
@@ -1259,10 +1282,10 @@ FDC_DATA     EQU  5fh
 03c6: c0 40         xmit    40h,aux
 03c7: 00 1f         move    aux,driv
 03c8: c0 00         xmit    0h,aux
-03c9: cf 02         xmit    CMD_PORT,ivr
+03c9: cf 02         xmit    HD_CMD,ivr
 03ca: da 21         xmit    1h,driv[5]
 03cb: da 20         xmit    0h,driv[5]
-03cc: cf 03         xmit    ST_PORT,ivr
+03cc: cf 03         xmit    HD_STATUS,ivr
 03cd: b9 2d x03cd:  nzt     sriv[6],x03cd
 03ce: c2 00 x03ce:  xmit    0h,r2
 03cf: c9 2a         xmit    2ah,r11
@@ -1322,7 +1345,7 @@ FDC_DATA     EQU  5fh
 0405: cf 5f         xmit    FDC_DATA,ivr
 0406: cf 5a x0406:  xmit    CSR1,ivr
 0407: be 26         nzt     sriv[1],x0406
-0408: cf 03         xmit    ST_PORT,ivr
+0408: cf 03         xmit    HD_STATUS,ivr
 0409: b9 2b         nzt     sriv[6],x040b
 040a: e4 47         jmp     x0447
 040b: cf 3f x040b:  xmit    DMA,ivr
@@ -1332,7 +1355,7 @@ FDC_DATA     EQU  5fh
 040f: 21 01         add     r1,r1
 0410: a1 12         nzt     r1,x0412
 0411: e4 16         jmp     x0416
-0412: cf 02 x0412:  xmit    CMD_PORT,ivr
+0412: cf 02 x0412:  xmit    HD_CMD,ivr
 0413: da 21         xmit    1h,driv[5]
 0414: da 20         xmit    0h,driv[5]
 0415: e4 02         jmp     x0402
@@ -1414,7 +1437,7 @@ FDC_DATA     EQU  5fh
 045e: 00 00         nop     
 045f: 00 00         nop     
 
-0460: cf 02 x0460:  xmit    CMD_PORT,ivr
+0460: cf 02 x0460:  xmit    HD_CMD,ivr
 0461: c6 94         xmit    94h,r6
 0462: 06 1f         move    r6,driv
 0463: c6 fa         xmit    0fah,r6
@@ -1425,7 +1448,7 @@ FDC_DATA     EQU  5fh
 0468: 00 00         nop     
 0469: 00 00         nop     
 046a: dd 20         xmit    0h,driv[2]
-046b: cf 03         xmit    ST_PORT,ivr
+046b: cf 03         xmit    HD_STATUS,ivr
 
 046c: be 2e x046c:  nzt     sriv[1],x046e
 046d: e4 6c         jmp     x046c
@@ -1436,46 +1459,46 @@ FDC_DATA     EQU  5fh
 0472: e4 75         jmp     x0475
 0473: bf 20 x0473:  nzt     sriv[0],x0460
 0474: e4 6f         jmp     x046f
-0475: cf 02 x0475:  xmit    CMD_PORT,ivr
+0475: cf 02 x0475:  xmit    HD_CMD,ivr
 0476: db 20         xmit    0h,driv[4]
 0477: de 21         xmit    1h,driv[1]
-0478: cf 03         xmit    ST_PORT,ivr
+0478: cf 03         xmit    HD_STATUS,ivr
 0479: bd 3c x0479:  nzt     sriv[2],x047c
 047a: be 39         nzt     sriv[1],x0479
 047b: e4 60         jmp     x0460
-047c: cf 03 x047c:  xmit    ST_PORT,ivr
+047c: cf 03 x047c:  xmit    HD_STATUS,ivr
 047d: bc 3d x047d:  nzt     sriv[3],x047d
 047e: 02 00         move    r2,aux
-047f: cf 03         xmit    ST_PORT,ivr
+047f: cf 03         xmit    HD_STATUS,ivr
 0480: bc 20 x0480:  nzt     sriv[3],x0480
 0481: cf 01         xmit    DATA_PORT,ivr
 0482: 7f 00         xor     sriv,aux
-0483: cf 03         xmit    ST_PORT,ivr
+0483: cf 03         xmit    HD_STATUS,ivr
 0484: a0 c3         nzt     aux,x04c3
 0485: 03 00         move    r3,aux
 0486: bc 26 x0486:  nzt     sriv[3],x0486
 0487: cf 01         xmit    DATA_PORT,ivr
 0488: 7f 00         xor     sriv,aux
-0489: cf 03         xmit    ST_PORT,ivr
+0489: cf 03         xmit    HD_STATUS,ivr
 048a: a0 b0         nzt     aux,x04b0
 048b: 04 00         move    r4,aux
 048c: bc 2c x048c:  nzt     sriv[3],x048c
 048d: cf 01         xmit    DATA_PORT,ivr
 048e: 7f 00         xor     sriv,aux
-048f: cf 03         xmit    ST_PORT,ivr
+048f: cf 03         xmit    HD_STATUS,ivr
 0490: a0 b2         nzt     aux,x04b2
 0491: 04 00         move    r4,aux
 0492: bc 32 x0492:  nzt     sriv[3],x0492
 0493: cf 01         xmit    DATA_PORT,ivr
 0494: 1f 01         move    sriv,r1
-0495: cf 03         xmit    ST_PORT,ivr
+0495: cf 03         xmit    HD_STATUS,ivr
 0496: bc 36 x0496:  nzt     sriv[3],x0496
 0497: e7 88         jmp     x0788
 0498: cf 01 x0498:  xmit    DATA_PORT,ivr
 0499: bf 1b         nzt     sriv,x049b
 049a: e4 9c         jmp     x049c
 049b: e4 b4 x049b:  jmp     x04b4
-049c: cf 03 x049c:  xmit    ST_PORT,ivr
+049c: cf 03 x049c:  xmit    HD_STATUS,ivr
 049d: bc 3d x049d:  nzt     sriv[3],x049d
 049e: cf 01         xmit    DATA_PORT,ivr
 049f: bf 1b         nzt     sriv,x049b
@@ -1485,7 +1508,7 @@ FDC_DATA     EQU  5fh
 04a3: 65 00         xor     r5,aux
 04a4: a0 ae         nzt     aux,x04ae
 04a5: c0 00         xmit    0h,aux
-04a6: cf 02 x04a6:  xmit    CMD_PORT,ivr
+04a6: cf 02 x04a6:  xmit    HD_CMD,ivr
 04a7: df 20         xmit    0h,driv[0]
 04a8: de 20         xmit    0h,driv[1]
 04a9: cf 51         xmit    VAL_9,ivr
@@ -1534,17 +1557,17 @@ FDC_DATA     EQU  5fh
 04d2: 23 03         add     r3,r3
 04d3: a3 ce         nzt     r3,x04ce
 04d4: e7 b0         jmp     x07b0
-04d5: cf 02 x04d5:  xmit    CMD_PORT,ivr
+04d5: cf 02 x04d5:  xmit    HD_CMD,ivr
 04d6: db 21         xmit    1h,driv[4]
 04d7: db 20         xmit    0h,driv[4]
 04d8: c1 00         xmit    0h,r1
 04d9: c0 01         xmit    1h,aux
 04da: cf 3f x04da:  xmit    DMA,ivr
 04db: 86 e3         xec     x04e3,r6
-04dc: cf 02         xmit    CMD_PORT,ivr
+04dc: cf 02         xmit    HD_CMD,ivr
 04dd: da 21         xmit    1h,driv[5]
 04de: da 20         xmit    0h,driv[5]
-04df: cf 03         xmit    ST_PORT,ivr
+04df: cf 03         xmit    HD_STATUS,ivr
 04e0: b9 20 x04e0:  nzt     sriv[6],x04e0
 04e1: b9 23 x04e1:  nzt     sriv[6],x04e3
 04e2: e4 e1         jmp     x04e1
@@ -1747,7 +1770,7 @@ FDC_DATA     EQU  5fh
 05a3: c1 a1 x05a3:  xmit    0a1h,r1
 05a4: c2 fa         xmit    0fah,r2
 05a5: c0 01         xmit    1h,aux
-05a6: cf 02         xmit    CMD_PORT,ivr
+05a6: cf 02         xmit    HD_CMD,ivr
 05a7: c3 94         xmit    94h,r3
 05a8: 03 1f         move    r3,driv
 05a9: 22 02 x05a9:  add     r2,r2
@@ -1756,7 +1779,7 @@ FDC_DATA     EQU  5fh
 05ac: 00 00         nop     
 05ad: 00 00         nop     
 05ae: dd 20         xmit    0h,driv[2]
-05af: cf 03         xmit    ST_PORT,ivr
+05af: cf 03         xmit    HD_STATUS,ivr
 05b0: be 32 x05b0:  nzt     sriv[1],x05b2
 05b1: e5 b0         jmp     x05b0
 05b2: c3 f7 x05b2:  xmit    0f7h,r3
@@ -1766,10 +1789,10 @@ FDC_DATA     EQU  5fh
 05b6: bf 38 x05b6:  nzt     sriv[0],x05b8
 05b7: e5 b3         jmp     x05b3
 05b8: e5 9e x05b8:  jmp     x059e
-05b9: cf 02 x05b9:  xmit    CMD_PORT,ivr
+05b9: cf 02 x05b9:  xmit    HD_CMD,ivr
 05ba: c0 83         xmit    83h,aux
 05bb: 00 1f         move    aux,driv
-05bc: cf 03         xmit    ST_PORT,ivr
+05bc: cf 03         xmit    HD_STATUS,ivr
 05bd: e5 c0         jmp     x05c0
 
 05be: 00 00         nop     
@@ -1778,20 +1801,20 @@ FDC_DATA     EQU  5fh
 05c0: bd 23 x05c0:  nzt     sriv[2],x05c3
 05c1: be 20         nzt     sriv[1],x05c0
 05c2: e3 43         jmp     x0343
-05c3: cf 03 x05c3:  xmit    ST_PORT,ivr
+05c3: cf 03 x05c3:  xmit    HD_STATUS,ivr
 05c4: bc 24 x05c4:  nzt     sriv[3],x05c4
 05c5: c0 08         xmit    8h,aux
-05c6: cf 03         xmit    ST_PORT,ivr
+05c6: cf 03         xmit    HD_STATUS,ivr
 05c7: bc 27 x05c7:  nzt     sriv[3],x05c7
 05c8: cf 01         xmit    DATA_PORT,ivr
 05c9: 7f 80         xor     sriv[3:0],aux
-05ca: cf 03         xmit    ST_PORT,ivr
+05ca: cf 03         xmit    HD_STATUS,ivr
 05cb: a0 d2         nzt     aux,x05d2
 05cc: bc 2c x05cc:  nzt     sriv[3],x05cc
 05cd: cf 01         xmit    DATA_PORT,ivr
 05ce: 1f 17         move    sriv,dliv
 05cf: c7 ff         xmit    0ffh,ivl
-05d0: cf 03         xmit    ST_PORT,ivr
+05d0: cf 03         xmit    HD_STATUS,ivr
 05d1: e5 d4         jmp     x05d4
 05d2: c0 08 x05d2:  xmit    8h,aux
 05d3: e5 9e         jmp     x059e
@@ -1799,7 +1822,7 @@ FDC_DATA     EQU  5fh
 05d5: cf 01         xmit    DATA_PORT,ivr
 05d6: 1f 17         move    sriv,dliv
 05d7: c7 ff         xmit    0ffh,ivl
-05d8: cf 03         xmit    ST_PORT,ivr
+05d8: cf 03         xmit    HD_STATUS,ivr
 05d9: ba 34         nzt     sriv[5],x05d4
 05da: bc 3a x05da:  nzt     sriv[3],x05da
 05db: cf 01         xmit    DATA_PORT,ivr
@@ -1809,16 +1832,16 @@ FDC_DATA     EQU  5fh
 05de: 00 00         nop     
 05df: 00 00         nop     
 
-05e0: cf 03 x05e0:  xmit    ST_PORT,ivr
+05e0: cf 03 x05e0:  xmit    HD_STATUS,ivr
 05e1: bc 21 x05e1:  nzt     sriv[3],x05e1
 05e2: e7 8f         jmp     x078f
 05e3: cf 01 x05e3:  xmit    DATA_PORT,ivr
 05e4: bf 0f         nzt     sriv,x05ef
-05e5: cf 03         xmit    ST_PORT,ivr
+05e5: cf 03         xmit    HD_STATUS,ivr
 05e6: bc 26 x05e6:  nzt     sriv[3],x05e6
 05e7: cf 01         xmit    DATA_PORT,ivr
 05e8: bf 0f         nzt     sriv,x05ef
-05e9: cf 02         xmit    CMD_PORT,ivr
+05e9: cf 02         xmit    HD_CMD,ivr
 05ea: df 20         xmit    0h,driv[0]
 05eb: de 20         xmit    0h,driv[1]
 05ec: c9 2d         xmit    2dh,r11
@@ -1841,24 +1864,24 @@ FDC_DATA     EQU  5fh
 05fd: c9 31         xmit    31h,r11
 05fe: e4 ee         jmp     x04ee
 05ff: a0 f1 x05ff:  nzt     aux,x05f1
-0600: cf 02         xmit    CMD_PORT,ivr
+0600: cf 02         xmit    HD_CMD,ivr
 0601: db 21         xmit    1h,driv[4]
 0602: db 20         xmit    0h,driv[4]
 0603: cf 5f x0603:  xmit    FDC_DATA,ivr
 0604: cf 5f         xmit    FDC_DATA,ivr
 0605: cf 5a x0605:  xmit    CSR1,ivr
 0606: be 25         nzt     sriv[1],x0605
-0607: cf 03         xmit    ST_PORT,ivr
+0607: cf 03         xmit    HD_STATUS,ivr
 0608: b9 2a         nzt     sriv[6],x060a
 0609: e4 47         jmp     x0447
 060a: cf 5f x060a:  xmit    FDC_DATA,ivr
 060b: 1f 02         move    sriv,r2
 060c: cf 3f         xmit    DMA,ivr
 060d: 02 1f         move    r2,driv
-060e: cf 02         xmit    CMD_PORT,ivr
+060e: cf 02         xmit    HD_CMD,ivr
 060f: da 21         xmit    1h,driv[5]
 0610: da 20         xmit    0h,driv[5]
-0611: cf 03         xmit    ST_PORT,ivr
+0611: cf 03         xmit    HD_STATUS,ivr
 0612: ba 34         nzt     sriv[5],x0614
 0613: e6 16         jmp     x0616
 0614: c7 ff x0614:  xmit    0ffh,ivl
@@ -2152,32 +2175,44 @@ FDC_DATA     EQU  5fh
 072a: 04 1f         move    r4,driv
 072b: c0 00         xmit    0h,aux
 072c: e7 b0         jmp     x07b0
+
+; Here is where we write something into the status register
+;  (and the only place we write to the STATUS register)
+;  (the CPU sees this at 0x8D).  We call it STATUS.
+;  Note that this is the only place FLAG0 is used,
+;  so the FLAG0 register is used exclusively for the
+;  handshake involved with this status.
+
 072d: 01 0f x072d:  move    r1,ivr
 072e: 1f 00         move    sriv,aux
-072f: cf 32 x072f:  xmit    IO2,ivr
-0730: 00 1f         move    aux,driv
+072f: cf 32 x072f:  xmit    STATUS,ivr
+0730: 00 1f         move    aux,driv		; post the status
 0731: cf 30         xmit    FLAG0,ivr
-0732: dd 21         xmit    1h,driv[2]
-0733: cf 30 x0733:  xmit    FLAG0,ivr
+0732: dd 21         xmit    1h,driv[2]		; set bit 2 for handshake
+0733: cf 30 x0733:  xmit    FLAG0,ivr		; loop til bit 2 is cleared
 0734: 1d 20         move    sriv[2],aux
 0735: a0 33         nzt     aux,x0733
 0736: e7 b0         jmp     x07b0
+
 0737: cf 5c x0737:  xmit    CSR3,ivr
 0738: db 40         xmit    0h,driv[5:4]
 0739: e7 b0         jmp     x07b0
+
 073a: cf 4a x073a:  xmit    VAL_2,ivr
 073b: 85 3d         xec     x073d,r5
 073c: e7 b0         jmp     x07b0
+
 073d: df 21 x073d:  xmit    1h,driv[0]
 073e: de 21         xmit    1h,driv[1]
 073f: cf 4a x073f:  xmit    VAL_2,ivr
 0740: 1f 40         move    sriv[1:0],aux
 0741: 80 47         xec     x0747,aux
-0742: cf 3e         xmit    STATUS,ivr
+0742: cf 3e         xmit    M_STATUS,ivr
 0743: 00 3a         move    aux,driv[5]
-0744: cf 02         xmit    CMD_PORT,ivr
+0744: cf 02         xmit    HD_CMD,ivr
 0745: 00 39         move    aux,driv[6]
 0746: e7 b0         jmp     x07b0
+
 0747: c0 00 x0747:  xmit    0h,aux
 0748: c0 01         xmit    1h,aux
 0749: c0 01         xmit    1h,aux
@@ -2185,14 +2220,17 @@ FDC_DATA     EQU  5fh
 074b: a5 4e x074b:  nzt     r5,x074e
 074c: c0 00         xmit    0h,aux
 074d: e7 b0         jmp     x07b0
-074e: cf 03 x074e:  xmit    ST_PORT,ivr
+
+074e: cf 03 x074e:  xmit    HD_STATUS,ivr
 074f: bb 34         nzt     sriv[4],x0754
 0750: 98 32         xec     x0752,sriv[7]
 0751: e7 b0         jmp     x07b0
+
 0752: c0 03 x0752:  xmit    3h,aux
 0753: c0 01         xmit    1h,aux
 0754: 98 36 x0754:  xec     x0756,sriv[7]
 0755: e7 b0         jmp     x07b0
+
 0756: c0 02 x0756:  xmit    2h,aux
 0757: c0 04         xmit    4h,aux
 0758: cf 50 x0758:  xmit    VAL_8,ivr
@@ -2216,6 +2254,7 @@ FDC_DATA     EQU  5fh
 076a: 21 01 x076a:  add     r1,r1
 076b: a1 6a         nzt     r1,x076a
 076c: e7 b0 x076c:  jmp     x07b0
+
 076d: cf 5a x076d:  xmit    CSR1,ivr
 076e: bf 30         nzt     sriv[0],x0770
 076f: e4 fb         jmp     x04fb
@@ -2243,25 +2282,26 @@ FDC_DATA     EQU  5fh
 0785: 22 02         add     r2,r2
 0786: a2 7e         nzt     r2,x077e
 0787: e7 b0         jmp     x07b0
-0788: cf 03 x0788:  xmit    ST_PORT,ivr
+
+0788: cf 03 x0788:  xmit    HD_STATUS,ivr
 0789: bc 29 x0789:  nzt     sriv[3],x0789
-078a: cf 02         xmit    CMD_PORT,ivr
+078a: cf 02         xmit    HD_CMD,ivr
 078b: dc 21         xmit    1h,driv[3]
-078c: cf 03         xmit    ST_PORT,ivr
+078c: cf 03         xmit    HD_STATUS,ivr
 078d: bc 2d x078d:  nzt     sriv[3],x078d
 078e: e4 98         jmp     x0498
-078f: cf 03 x078f:  xmit    ST_PORT,ivr
+078f: cf 03 x078f:  xmit    HD_STATUS,ivr
 0790: bc 30 x0790:  nzt     sriv[3],x0790
-0791: cf 02         xmit    CMD_PORT,ivr
+0791: cf 02         xmit    HD_CMD,ivr
 0792: dc 21         xmit    1h,driv[3]
-0793: cf 03         xmit    ST_PORT,ivr
+0793: cf 03         xmit    HD_STATUS,ivr
 0794: bc 34 x0794:  nzt     sriv[3],x0794
-0795: cf 03         xmit    ST_PORT,ivr
+0795: cf 03         xmit    HD_STATUS,ivr
 0796: bc 36 x0796:  nzt     sriv[3],x0796
 0797: e5 e3         jmp     x05e3
-0798: cf 03 x0798:  xmit    ST_PORT,ivr
+0798: cf 03 x0798:  xmit    HD_STATUS,ivr
 0799: bc 39 x0799:  nzt     sriv[3],x0799
-079a: cf 03         xmit    ST_PORT,ivr
+079a: cf 03         xmit    HD_STATUS,ivr
 079b: bc 3b x079b:  nzt     sriv[3],x079b
 079c: e3 a1         jmp     x03a1
 079d: a5 9f x079d:  nzt     r5,x079f
