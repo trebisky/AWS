@@ -300,8 +300,10 @@ FDC_DATA     EQU  5fh
 0060: 02 00         move    r2,aux
 0061: 7e 20         xor     sriv[1],aux
 0062: a0 7a         nzt     aux,x007a
-0063: c9 01 x0063:  xmit    1h,r11
+
+0063: c9 01 x0063:  xmit    1h,r11		; r11 = 1
 0064: e7 3f         jmp     x073f
+
 0065: cf 3e x0065:  xmit    M_STATUS,ivr
 0066: 1f 40         move    sriv[1:0],aux
 0067: cf 3b         xmit    IOb,ivr
@@ -321,11 +323,12 @@ FDC_DATA     EQU  5fh
 0072: 1f 21         move    sriv[0],r1
 0073: 61 01         xor     r1,r1
 0074: 01 a1         move    r1>>>5,r1
-0075: c9 02         xmit    2h,r11
+0075: c9 02         xmit    2h,r11		; r11 = 2
 0076: e0 85         jmp     x0085
 
-0077: c9 03 x0077:  xmit    3h,r11
+0077: c9 03 x0077:  xmit    3h,r11		; r11 = 3
 0078: e7 3a         jmp     x073a
+
 0079: e0 5f x0079:  jmp     x005f
 007a: c5 01 x007a:  xmit    1h,r5
 007b: cf 3e         xmit    M_STATUS,ivr
@@ -333,19 +336,22 @@ FDC_DATA     EQU  5fh
 007d: 1e 21         move    sriv[1],r1
 007e: 61 01         xor     r1,r1
 007f: 01 a1         move    r1>>>5,r1
-0080: c9 04         xmit    4h,r11
+0080: c9 04         xmit    4h,r11		; r11 = 4
 0081: e0 85         jmp     x0085
 
-0082: c9 05 x0082:  xmit    5h,r11
+0082: c9 05 x0082:  xmit    5h,r11		; r11 = 5
 0083: e7 3a         jmp     x073a
+
 0084: e0 63 x0084:  jmp     x0063
 
-0085: c0 33 x0085:  xmit    33h,aux
-0086: 25 0f         add     r5,ivr	; ivr = 33 + drive
+0085: c0 33 x0085:  xmit    33h,aux		; aux = 33h
+0086: 25 0f         add     r5,ivr		; ivr = 33 + drive
 0087: c0 c0         xmit    0c0h,aux
 0088: 25 1f         add     r5,driv
 0089: e7 b0         jmp     x07b0
 
+; ** We have a command !
+;
 ; read the byte in the command register.
 ; the bottom 4 bits give the command and
 ; and handled via the jump table below.
@@ -383,7 +389,7 @@ FDC_DATA     EQU  5fh
 
 ; We end up here if the command is not defined.
 
-009e: c9 06 x009e:  xmit    6h,r11
+009e: c9 06 x009e:  xmit    6h,r11	; r11 = 6
 009f: e7 3a         jmp     x073a
 
 00a0: c0 33 x00a0:  xmit    33h,aux
@@ -409,17 +415,17 @@ FDC_DATA     EQU  5fh
 00ac: 25 01         add     r5,r1
 00ad: cf 3e         xmit    M_STATUS,ivr
 00ae: da 21         xmit    1h,driv[5]
-00af: c9 07         xmit    7h,r11
+00af: c9 07         xmit    7h,r11		; r11 = 7
 00b0: e7 2d         jmp     x072d
 
 00b1: c0 35 x00b1:  xmit    35h,aux
 00b2: 25 01         add     r5,r1
-00b3: c9 08         xmit    8h,r11
+00b3: c9 08         xmit    8h,r11		; r11 = 8
 00b4: e7 2d         jmp     x072d
 
 00b5: c0 37 x00b5:  xmit    37h,aux
 00b6: 25 01         add     r5,r1
-00b7: c9 09         xmit    9h,r11
+00b7: c9 09         xmit    9h,r11		; r11 = 9
 00b8: e7 2d         jmp     x072d
 
 00b9: e0 ba x00b9:  jmp     x00ba
@@ -431,17 +437,17 @@ FDC_DATA     EQU  5fh
 ; Status 3 only
 ; 2 bytes with head and track
 
-00ba: c9 0a x00ba:  xmit    0ah,r11
+00ba: c9 0a x00ba:  xmit    0ah,r11		; r11 = 0xa = 10
 00bb: e6 3d         jmp     x063d
 00bc: cf 3e x00bc:  xmit    M_STATUS,ivr
 00bd: da 21         xmit    1h,driv[5]
-00be: c9 0b         xmit    0bh,r11
+00be: c9 0b         xmit    0bh,r11		; r11 = 0xb = 11
 00bf: e6 4f         jmp     x064f
-00c0: c9 0c x00c0:  xmit    0ch,r11
+00c0: c9 0c x00c0:  xmit    0ch,r11		; r11 = 0xc = 12
 00c1: e7 37         jmp     x0737
 00c2: c0 39 x00c2:  xmit    39h,aux
 00c3: 25 01         add     r5,r1
-00c4: c9 0d         xmit    0dh,r11
+00c4: c9 0d         xmit    0dh,r11		; r11 = 0xd = 13
 00c5: e7 2d         jmp     x072d
 
 00c6: cf 3e x00c6:  xmit    M_STATUS,ivr
@@ -463,19 +469,19 @@ FDC_DATA     EQU  5fh
 00cc: 83 df         xec     x00df,r3
 00cd: c0 33         xmit    33h,aux
 00ce: 25 01         add     r5,r1
-00cf: c9 0e         xmit    0eh,r11
+00cf: c9 0e         xmit    0eh,r11		; r11 = 0xe = 14
 00d0: e7 2d         jmp     x072d
 
 00d1: cf 4a x00d1:  xmit    VAL_2,ivr
 00d2: 83 e3         xec     x00e3,r3
-00d3: c9 0f         xmit    0fh,r11
+00d3: c9 0f         xmit    0fh,r11		; r11 = 0xf = 15
 00d4: e7 3f         jmp     x073f
 00d5: c0 00 x00d5:  xmit    0h,aux
-00d6: c9 10         xmit    10h,r11
+00d6: c9 10         xmit    10h,r11		; r11 = 0x10 = 16
 00d7: e7 2f         jmp     x072f
 00d8: c0 48 x00d8:  xmit    48h,aux
 00d9: 25 01         add     r5,r1
-00da: c9 11         xmit    11h,r11
+00da: c9 11         xmit    11h,r11		; r11 = 0x11 = 17
 00db: e7 2d         jmp     x072d
 
 00dc: cf 3b x00dc:  xmit    IOb,ivr
@@ -504,12 +510,12 @@ FDC_DATA     EQU  5fh
 
 00e7: cf 3e x00e7:  xmit    M_STATUS,ivr
 00e8: da 21         xmit    1h,driv[5]
-00e9: c9 12         xmit    12h,r11
+00e9: c9 12         xmit    12h,r11		; r11 = 0x12 = 18
 00ea: e7 4b         jmp     x074b
 00eb: 00 03 x00eb:  move    aux,r3
 00ec: c1 ff         xmit    0ffh,r1
 00ed: c0 02         xmit    2h,aux
-00ee: c9 13 x00ee:  xmit    13h,r11
+00ee: c9 13 x00ee:  xmit    13h,r11		; r11 = 0x13 = 19
 00ef: e7 2f         jmp     x072f
 00f0: c0 01 x00f0:  xmit    1h,aux
 00f1: 21 01         add     r1,r1
@@ -574,27 +580,27 @@ FDC_DATA     EQU  5fh
 
 011d: c1 4b x011d:  xmit    4bh,r1
 011e: c2 fe         xmit    0feh,r2
-011f: c9 14         xmit    14h,r11
+011f: c9 14         xmit    14h,r11		; r11 = 0x14 = 20
 0120: e6 6c         jmp     x066c
 0121: a0 23 x0121:  nzt     aux,x0123
 0122: e1 24         jmp     x0124
 0123: e0 9e x0123:  jmp     x009e
-0124: c9 15 x0124:  xmit    15h,r11
+0124: c9 15 x0124:  xmit    15h,r11		; r11 = 0x15 = 21
 0125: e6 3d         jmp     x063d
 0126: a0 28 x0126:  nzt     aux,x0128
 0127: e1 2a         jmp     x012a
 0128: c1 48 x0128:  xmit    48h,r1
 0129: e1 2f         jmp     x012f
-012a: c9 16 x012a:  xmit    16h,r11
+012a: c9 16 x012a:  xmit    16h,r11		; r11 = 0x16 = 22
 012b: e7 4b         jmp     x074b
-012c: c9 17 x012c:  xmit    17h,r11
+012c: c9 17 x012c:  xmit    17h,r11		; r11 = 0x17 = 23
 012d: e6 94         jmp     x0694
 012e: c1 20 x012e:  xmit    20h,r1
 012f: c0 33 x012f:  xmit    33h,aux
 0130: 25 0f         add     r5,ivr
 0131: 01 00         move    r1,aux
 0132: 25 1f         add     r5,driv
-0133: c9 18         xmit    18h,r11
+0133: c9 18         xmit    18h,r11		; r11 = 0x18 = 24
 0134: e7 3a         jmp     x073a
 0135: e0 a6 x0135:  jmp     x00a6
 
@@ -604,7 +610,7 @@ FDC_DATA     EQU  5fh
 ; just the single command byte is enough,
 ; no other bytes need be read.
 
-0136: c9 19 x0136:  xmit    19h,r11
+0136: c9 19 x0136:  xmit    19h,r11		; r11 = 0x19 = 25
 0137: e6 3d         jmp     x063d
 0138: a0 3a x0138:  nzt     aux,x013a
 0139: e1 3b         jmp     x013b
@@ -650,27 +656,27 @@ FDC_DATA     EQU  5fh
 015d: db 66         xmit    6h,driv[6:4]
 015e: c1 4b         xmit    4bh,r1
 015f: c2 fb         xmit    0fbh,r2
-0160: c9 1a         xmit    1ah,r11
+0160: c9 1a         xmit    1ah,r11		; r11 = 0x1A = 26
 0161: e6 6c         jmp     x066c
 0162: a0 64 x0162:  nzt     aux,x0164
 0163: e1 65         jmp     x0165
 0164: e0 9e x0164:  jmp     x009e
 0165: cf 3e x0165:  xmit    M_STATUS,ivr
 0166: db 21         xmit    1h,driv[4]
-0167: c9 1b         xmit    1bh,r11
+0167: c9 1b         xmit    1bh,r11		; r11 = 0x1b = 27
 0168: e6 3d         jmp     x063d
 0169: a0 6b x0169:  nzt     aux,x016b
 016a: e1 6c         jmp     x016c
 016b: e2 24 x016b:  jmp     x0224
-016c: c9 1c x016c:  xmit    1ch,r11
+016c: c9 1c x016c:  xmit    1ch,r11		; r11 = 0x1c = 28
 016d: e7 4b         jmp     x074b
-016e: c9 1d x016e:  xmit    1dh,r11
+016e: c9 1d x016e:  xmit    1dh,r11		; r11 = 0x1d = 29
 016f: e6 94         jmp     x0694
 0170: cf 4b x0170:  xmit    VAL_3,ivr
 0171: 1b 60         move    sriv[6:4],aux
 0172: cf 5c         xmit    CSR3,ivr
 0173: 00 7e         move    aux,driv[3:1]
-0174: c9 1e         xmit    1eh,r11
+0174: c9 1e         xmit    1eh,r11		; r11 = 0x1e = 30
 0175: e7 68         jmp     x0768
 0176: cf 02 x0176:  xmit    HD_CMD,ivr
 0177: df 20         xmit    0h,driv[0]
@@ -827,7 +833,7 @@ FDC_DATA     EQU  5fh
 020e: d8 21         xmit    1h,driv[7]
 020f: cf 02         xmit    HD_CMD,ivr
 0210: dd 20         xmit    0h,driv[2]
-0211: c9 1f         xmit    1fh,r11
+0211: c9 1f         xmit    1fh,r11			; r11 = 0x1f = 31
 0212: e7 37         jmp     x0737
 0213: c0 33 x0213:  xmit    33h,aux
 0214: 25 0f         add     r5,ivr
@@ -839,11 +845,11 @@ FDC_DATA     EQU  5fh
 021a: d9 21         xmit    1h,driv[6]
 021b: 04 00         move    r4,aux
 021c: 25 00         add     r5,aux
-021d: c9 20         xmit    20h,r11
+021d: c9 20         xmit    20h,r11			; r11 = 0x20 = 32
 021e: e7 2f         jmp     x072f
 021f: cf 3e x021f:  xmit    M_STATUS,ivr
 0220: db 20         xmit    0h,driv[4]
-0221: c9 21         xmit    21h,r11
+0221: c9 21         xmit    21h,r11			; r11 = 0x21 = 33
 0222: e7 3f         jmp     x073f
 0223: e0 18 x0223:  jmp     x0018
 
@@ -1097,7 +1103,7 @@ FDC_DATA     EQU  5fh
 
 0316: c1 4b x0316:  xmit    4bh,r1
 0317: c2 fc         xmit    0fch,r2
-0318: c9 22         xmit    22h,r11
+0318: c9 22         xmit    22h,r11			; r11 = 0x22 = 34
 0319: e6 6c         jmp     x066c
 
 031a: a0 1c x031a:  nzt     aux,x031c
@@ -1108,17 +1114,17 @@ FDC_DATA     EQU  5fh
 031f: cf 3e         xmit    M_STATUS,ivr
 0320: db 21         xmit    1h,driv[4]
 0321: da 20         xmit    0h,driv[5]
-0322: c9 23         xmit    23h,r11
+0322: c9 23         xmit    23h,r11			; r11 = 0x23 = 35
 0323: e6 3d         jmp     x063d
 0324: a0 26 x0324:  nzt     aux,x0326
 0325: e3 27         jmp     x0327
 0326: e2 24 x0326:  jmp     x0224
-0327: c9 24 x0327:  xmit    24h,r11
+0327: c9 24 x0327:  xmit    24h,r11			; r11 = 0x24 = 36
 0328: e7 4b         jmp     x074b
 
 0329: cf 3c x0329:  xmit    IOc,ivr
 032a: 80 2e         xec     x032e,aux
-032b: c9 25         xmit    25h,r11
+032b: c9 25         xmit    25h,r11			; r11 = 0x25 = 37
 032c: e6 94         jmp     x0694
 032d: e3 33 x032d:  jmp     x0333
 
@@ -1133,7 +1139,7 @@ FDC_DATA     EQU  5fh
 0334: 1b 60         move    sriv[6:4],aux
 0335: cf 5c x0335:  xmit    CSR3,ivr
 0336: 00 7e         move    aux,driv[3:1]
-0337: c9 26         xmit    26h,r11
+0337: c9 26         xmit    26h,r11			; r11 = 0x26 = 38
 0338: e7 68         jmp     x0768
 0339: 86 35 x0339:  xec     x0335,r6
 033a: e3 40         jmp     x0340
@@ -1181,9 +1187,9 @@ FDC_DATA     EQU  5fh
 0362: de 20         xmit    0h,driv[1]
 0363: c4 40         xmit    40h,r4
 0364: e2 13         jmp     x0213
-0365: c9 27 x0365:  xmit    27h,r11
+0365: c9 27 x0365:  xmit    27h,r11			; r11 = 0x27 = 39
 0366: e4 d5         jmp     x04d5
-0367: c9 28 x0367:  xmit    28h,r11
+0367: c9 28 x0367:  xmit    28h,r11			; r11 = 0x28 = 40
 0368: e4 49         jmp     x0449
 0369: a0 6b x0369:  nzt     aux,x036b
 036a: e3 6c         jmp     x036c
@@ -1276,7 +1282,7 @@ FDC_DATA     EQU  5fh
 03c0: ba 23         nzt     sriv[5],x03c3
 03c1: c0 0b         xmit    0bh,aux
 03c2: e3 43         jmp     x0343
-03c3: c9 29 x03c3:  xmit    29h,r11
+03c3: c9 29 x03c3:  xmit    29h,r11			; r11 = 0x29 = 41
 03c4: e4 c4         jmp     x04c4
 03c5: cf 5b x03c5:  xmit    CSR2,ivr
 03c6: c0 40         xmit    40h,aux
@@ -1288,10 +1294,10 @@ FDC_DATA     EQU  5fh
 03cc: cf 03         xmit    HD_STATUS,ivr
 03cd: b9 2d x03cd:  nzt     sriv[6],x03cd
 03ce: c2 00 x03ce:  xmit    0h,r2
-03cf: c9 2a         xmit    2ah,r11
+03cf: c9 2a         xmit    2ah,r11			; r11 = 0x2a = 42
 03d0: e4 ee         jmp     x04ee
 03d1: a0 ce x03d1:  nzt     aux,x03ce
-03d2: c9 2b         xmit    2bh,r11
+03d2: c9 2b         xmit    2bh,r11			; r11 = 0x2b = 43
 03d3: e7 7b         jmp     x077b
 03d4: cf 4c x03d4:  xmit    VAL_4,ivr
 03d5: c0 d5         xmit    0d5h,aux
@@ -1762,7 +1768,7 @@ FDC_DATA     EQU  5fh
 059b: 85 9c x059b:  xec     x059c,r5
 059c: e5 f1 x059c:  jmp     x05f1
 059d: e5 9e         jmp     x059e
-059e: c9 2c x059e:  xmit    2ch,r11
+059e: c9 2c x059e:  xmit    2ch,r11			; r11 = 0x2c = 44
 059f: e4 49         jmp     x0449
 05a0: a0 a2 x05a0:  nzt     aux,x05a2
 05a1: e5 a3         jmp     x05a3
@@ -1844,7 +1850,7 @@ FDC_DATA     EQU  5fh
 05e9: cf 02         xmit    HD_CMD,ivr
 05ea: df 20         xmit    0h,driv[0]
 05eb: de 20         xmit    0h,driv[1]
-05ec: c9 2d         xmit    2dh,r11
+05ec: c9 2d         xmit    2dh,r11			; r11 = 0x2d = 45
 05ed: e4 d5         jmp     x04d5
 05ee: e3 a5 x05ee:  jmp     x03a5
 05ef: c0 09 x05ef:  xmit    9h,aux
@@ -1852,16 +1858,16 @@ FDC_DATA     EQU  5fh
 05f1: cf 5b x05f1:  xmit    CSR2,ivr
 05f2: c2 40         xmit    40h,r2
 05f3: 02 1f         move    r2,driv
-05f4: c9 2e         xmit    2eh,r11
+05f4: c9 2e         xmit    2eh,r11			; r11 = 46
 05f5: e4 c4         jmp     x04c4
 05f6: c2 00 x05f6:  xmit    0h,r2
-05f7: c9 2f         xmit    2fh,r11
+05f7: c9 2f         xmit    2fh,r11			; r11 = 47
 05f8: e4 ee         jmp     x04ee
 05f9: a0 f1 x05f9:  nzt     aux,x05f1
-05fa: c9 30         xmit    30h,r11
+05fa: c9 30         xmit    30h,r11			; r11 = 48
 05fb: e7 7b         jmp     x077b
 05fc: c2 01 x05fc:  xmit    1h,r2
-05fd: c9 31         xmit    31h,r11
+05fd: c9 31         xmit    31h,r11			; r11 = 49
 05fe: e4 ee         jmp     x04ee
 05ff: a0 f1 x05ff:  nzt     aux,x05f1
 0600: cf 02         xmit    HD_CMD,ivr
@@ -2198,12 +2204,18 @@ FDC_DATA     EQU  5fh
 0738: db 40         xmit    0h,driv[5:4]
 0739: e7 b0         jmp     x07b0
 
+; Here when given an invalid command code AND
+;  certain other cases
+
 073a: cf 4a x073a:  xmit    VAL_2,ivr
 073b: 85 3d         xec     x073d,r5
 073c: e7 b0         jmp     x07b0
 
+; This gets indexed by r5 above (0 for fd, 1 for hd)
+
 073d: df 21 x073d:  xmit    1h,driv[0]
 073e: de 21         xmit    1h,driv[1]
+
 073f: cf 4a x073f:  xmit    VAL_2,ivr
 0740: 1f 40         move    sriv[1:0],aux
 0741: 80 47         xec     x0747,aux
@@ -2217,6 +2229,9 @@ FDC_DATA     EQU  5fh
 0748: c0 01         xmit    1h,aux
 0749: c0 01         xmit    1h,aux
 074a: c0 01         xmit    1h,aux
+
+; Many drive functions branch here.
+
 074b: a5 4e x074b:  nzt     r5,x074e
 074c: c0 00         xmit    0h,aux
 074d: e7 b0         jmp     x07b0
@@ -2327,6 +2342,10 @@ FDC_DATA     EQU  5fh
 07af: 00 00         nop     
 
 ; big jump table.
+; My theory is that this is a "return" to various places
+;  above, as indicated by the r11 register.
+;  with a few exceptions, this is the sole use of the r11 register,
+;  i.e. to tell this jump table where to "return" to.
 
 07b0: 89 b0 x07b0:  xec     x07b0,r11
 07b1: e0 65         jmp     x0065
