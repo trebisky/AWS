@@ -30,3 +30,13 @@ P11 and P12 were the connectors to floppy drives (you could have two).
 The HDC controller had 2 big edge connectors.  P10 was a 50 pin connector and
 was a sort of bus between it and the CPU card.  P9 was an 80 pin connector and
 carried most (but not all) of the drive signals.
+
+---
+
+A note on bit order.  All of the Signetics 8x300 series documents use an old
+convention for numbering bits.  Namely the MSB is bit 0 and the LSB is bit 7
+(in an 8 bit word anyway).  The modern convention is just the opposite.
+The disassembler I used uses the modern convention.  So when you see something
+like sriv[7] the assembly is accessing the MSB not the LSB.  This all makes
+sense to the modern mind and the only time you need to take care is when you
+look at the old datasheets (and the schematics).

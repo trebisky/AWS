@@ -618,10 +618,11 @@ FDC_DATA     EQU  5fh
 0128: c1 48 x0128:  xmit    48h,r1
 0129: e1 2f         jmp     x012f
 012a: c9 16 x012a:  xmit    16h,r11		; r11 = 0x16 = 22
-012b: e7 4b         jmp     x074b		; get drive type
+012b: e7 4b         jmp     x074b		; get drive type (in aux)
 
 012c: c9 17 x012c:  xmit    17h,r11		; r11 = 0x17 = 23
 012d: e6 94         jmp     x0694
+
 012e: c1 20 x012e:  xmit    20h,r1
 012f: c0 33 x012f:  xmit    33h,aux
 0130: 25 0f         add     r5,ivr
@@ -2096,12 +2097,16 @@ FDC_DATA     EQU  5fh
 
 0692: c0 01 x0692:  xmit    1h,aux
 0693: e7 b0 x0693:  jmp     x07b0		; BIG RETURN
-0694: 00 04 x0694:  move    aux,r4
-0695: 05 00         move    r5,aux
-0696: 04 05         move    r4,r5
-0697: c4 48         xmit    48h,r4
-0698: 24 04         add     r4,r4
-0699: 04 0f         move    r4,ivr
+
+; subroutine
+; called by seek, format, and read/write
+
+0694: 00 04 x0694:  move    aux,r4		; r4 = drive type
+0695: 05 00         move    r5,aux		; aux = hd/fd
+0696: 04 05         move    r4,r5		; r5 = drive type
+0697: c4 48         xmit    48h,r4		; r4 = 0x48
+0698: 24 04         add     r4,r4		; r4 = r4 + aux
+0699: 04 0f         move    r4,ivr		; access 0x48 or 0x49
 069a: 1f 02         move    sriv,r2
 069b: cf 4c         xmit    VAL_4,ivr
 069c: 1f 01         move    sriv,r1
@@ -2123,14 +2128,16 @@ FDC_DATA     EQU  5fh
 06ac: d8 21         xmit    1h,driv[7]
 06ad: c0 ff         xmit    0ffh,aux
 06ae: 63 03         xor     r3,r3
-06af: c0 01         xmit    1h,aux
-06b0: 23 03         add     r3,r3
-06b1: 85 b2 x06b1:  xec     x06b2,r5
-06b2: e7 09 x06b2:  jmp     x0709
-06b3: e6 f9         jmp     x06f9
-06b4: e6 f9         jmp     x06f9
-06b5: e6 f9         jmp     x06f9
-06b6: e6 b7         jmp     x06b7
+06af: c0 01         xmit    1h,aux		; aux = 1
+06b0: 23 03         add     r3,r3		; r3++
+
+06b1: 85 b2 x06b1:  xec     x06b2,r5		; jump based on drive type
+06b2: e7 09 x06b2:  jmp     x0709		; floppy
+06b3: e6 f9         jmp     x06f9		; hd 1
+06b4: e6 f9         jmp     x06f9		; hd 2
+06b5: e6 f9         jmp     x06f9		; hd 3
+06b6: e6 b7         jmp     x06b7		; hd 4
+
 06b7: c0 ff x06b7:  xmit    0ffh,aux
 06b8: 63 00         xor     r3,aux
 06b9: a0 bb         nzt     aux,x06bb
