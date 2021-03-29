@@ -99,10 +99,10 @@ HD_STATUS    EQU  3h	; read only (chip 6A)
 ;  UD6 - 16Z+
 ;  UD5 - AM+
 ;  UD4 - REQ+
-;  UD3 - DRTYPE0-
-;  UD2 - FULL*
-;  UD1 - DMACK*
-;  UD0 - DRTYPE1-
+;  UD3 - DRTYPE0-	sriv[4]
+;  UD2 - FULL*		sriv[5]
+;  UD1 - DMACK*		sriv[6]
+;  UD0 - DRTYPE1-	sriv[7]
 
 ; 8x320 bus interface device.
 ; Addresses 0x30 to 0x3f are the 8x320 dual port bus interface gadget
@@ -513,13 +513,15 @@ FDC_DATA     EQU  5fh
 ; - sectors per track
 ; - drive present
 
+; The command does specify fd versus hd
+
 00e7: cf 3e x00e7:  xmit    M_STATUS,ivr
 00e8: da 21         xmit    1h,driv[5]
 
 00e9: c9 12         xmit    12h,r11		; r11 = 0x12 = 18
-00ea: e7 4b         jmp     x074b
+00ea: e7 4b         jmp     x074b		; get drive type
 
-00eb: 00 03 x00eb:  move    aux,r3
+00eb: 00 03 x00eb:  move    aux,r3		; drive type (0-4) to r3
 00ec: c1 ff         xmit    0ffh,r1		; r1 = 0xff
 00ed: c0 02         xmit    2h,aux		; aux = 2
 
@@ -616,7 +618,8 @@ FDC_DATA     EQU  5fh
 0128: c1 48 x0128:  xmit    48h,r1
 0129: e1 2f         jmp     x012f
 012a: c9 16 x012a:  xmit    16h,r11		; r11 = 0x16 = 22
-012b: e7 4b         jmp     x074b
+012b: e7 4b         jmp     x074b		; get drive type
+
 012c: c9 17 x012c:  xmit    17h,r11		; r11 = 0x17 = 23
 012d: e6 94         jmp     x0694
 012e: c1 20 x012e:  xmit    20h,r1
@@ -708,7 +711,8 @@ FDC_DATA     EQU  5fh
 016a: e1 6c         jmp     x016c
 016b: e2 24 x016b:  jmp     x0224
 016c: c9 1c x016c:  xmit    1ch,r11		; r11 = 0x1c = 28
-016d: e7 4b         jmp     x074b
+016d: e7 4b         jmp     x074b		; get drive type
+
 016e: c9 1d x016e:  xmit    1dh,r11		; r11 = 0x1d = 29
 016f: e6 94         jmp     x0694
 0170: cf 4b x0170:  xmit    VAL_3,ivr
@@ -1160,7 +1164,7 @@ FDC_DATA     EQU  5fh
 0325: e3 27         jmp     x0327
 0326: e2 24 x0326:  jmp     x0224
 0327: c9 24 x0327:  xmit    24h,r11			; r11 = 0x24 = 36
-0328: e7 4b         jmp     x074b
+0328: e7 4b         jmp     x074b			; get drive type
 
 0329: cf 3c x0329:  xmit    IOc,ivr
 032a: 80 2e         xec     x032e,aux
@@ -2255,6 +2259,10 @@ FDC_DATA     EQU  5fh
 
 072d: 01 0f x072d:  move    r1,ivr
 072e: 1f 00         move    sriv,aux
+
+; config (and other commands) come here with
+; a value in aux to output via the STATUS register
+
 072f: cf 32 x072f:  xmit    STATUS,ivr
 0730: 00 1f         move    aux,driv		; post the status
 0731: cf 30         xmit    FLAG0,ivr
@@ -2265,7 +2273,7 @@ FDC_DATA     EQU  5fh
 0736: e7 b0         jmp     x07b0		; BIG RETURN
 
 0737: cf 5c x0737:  xmit    CSR3,ivr
-0738: db 40         xmit    0h,driv[5:4]
+0738: db 40         xmit    0h,driv[5:4]	; deselect drive
 0739: e7 b0         jmp     x07b0		; BIG RETURN
 
 ; Here when given an invalid command code AND
@@ -2294,24 +2302,32 @@ FDC_DATA     EQU  5fh
 0749: c0 01         xmit    1h,aux
 074a: c0 01         xmit    1h,aux
 
+; Subroutine "get drive type"
 ; Many drive functions branch here.
+; various returns in r11
+; This returns the drive type in aux
+;	0 = floppy
+;	1234 = the 4 known HD types
 
-074b: a5 4e x074b:  nzt     r5,x074e
-074c: c0 00         xmit    0h,aux
+074b: a5 4e x074b:  nzt     r5,x074e		; branch if HD
+074c: c0 00         xmit    0h,aux		; return 0 for floppy
 074d: e7 b0         jmp     x07b0		; BIG RETURN
 
 074e: cf 03 x074e:  xmit    HD_STATUS,ivr
-074f: bb 34         nzt     sriv[4],x0754
-0750: 98 32         xec     x0752,sriv[7]
+074f: bb 34         nzt     sriv[4],x0754	; test drtype-0
+0750: 98 32         xec     x0752,sriv[7]	; index table with drtype-1
 0751: e7 b0         jmp     x07b0		; BIG RETURN
 
-0752: c0 03 x0752:  xmit    3h,aux
+0752: c0 03 x0752:  xmit    3h,aux		; table of 2 values
 0753: c0 01         xmit    1h,aux
-0754: 98 36 x0754:  xec     x0756,sriv[7]
+
+0754: 98 36 x0754:  xec     x0756,sriv[7]	; index table with drtype-1
 0755: e7 b0         jmp     x07b0		; BIG RETURN
 
-0756: c0 02 x0756:  xmit    2h,aux
+0756: c0 02 x0756:  xmit    2h,aux		; table of 2 values
 0757: c0 04         xmit    4h,aux
+
+
 0758: cf 50 x0758:  xmit    VAL_8,ivr
 0759: c0 01         xmit    1h,aux
 075a: 3f 1f         add     sriv,driv
