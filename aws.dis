@@ -438,7 +438,7 @@ FDC_DATA     EQU  5fh
 ; 2 bytes with head and track
 
 00ba: c9 0a x00ba:  xmit    0ah,r11		; r11 = 0xa = 10
-00bb: e6 3d         jmp     x063d
+00bb: e6 3d         jmp     x063d		; select drive
 
 00bc: cf 3e x00bc:  xmit    M_STATUS,ivr
 00bd: da 21         xmit    1h,driv[5]
@@ -515,15 +515,20 @@ FDC_DATA     EQU  5fh
 
 00e7: cf 3e x00e7:  xmit    M_STATUS,ivr
 00e8: da 21         xmit    1h,driv[5]
+
 00e9: c9 12         xmit    12h,r11		; r11 = 0x12 = 18
 00ea: e7 4b         jmp     x074b
+
 00eb: 00 03 x00eb:  move    aux,r3
-00ec: c1 ff         xmit    0ffh,r1
-00ed: c0 02         xmit    2h,aux
+00ec: c1 ff         xmit    0ffh,r1		; r1 = 0xff
+00ed: c0 02         xmit    2h,aux		; aux = 2
+
+; This starts the loop.
 00ee: c9 13 x00ee:  xmit    13h,r11		; r11 = 0x13 = 19
 00ef: e7 2f         jmp     x072f
-00f0: c0 01 x00f0:  xmit    1h,aux
-00f1: 21 01         add     r1,r1
+
+00f0: c0 01 x00f0:  xmit    1h,aux		; aux = 1
+00f1: 21 01         add     r1,r1		; r1++
 00f2: e1 00         jmp     x0100
 
 00f3: 00 00         nop     
@@ -540,36 +545,48 @@ FDC_DATA     EQU  5fh
 00fe: 00 00         nop     
 00ff: 00 00         nop     
 
+; the aim in what follows is to load a value into aux
+; We essentially have 4 tables of 5 values
+; r1 is the inner loop.
+; r3 is set once outside the loop.
+; So, r3 determines what the drive type is.
+;
+; type 0 --  77 tracks, 1 head, 16 sectors per track
+; type 1 -- 256 tracks, 2 head, 32 sectors per track
+; type 2 -- 256 tracks, 4 head, 32 sectors per track
+; type 3 -- 256 tracks, 6 head, 32 sectors per track
+; type 4 -- 153 tracks, 4 head, 32 sectors per track
+
 0100: 81 04 x0100:  xec     x0104,r1
 0101: cf 3e         xmit    M_STATUS,ivr
 0102: da 20         xmit    0h,driv[5]
-0103: e0 ee         jmp     x00ee
+0103: e0 ee         jmp     x00ee		; loop up
 
-0104: 83 09 x0104:  xec     x0109,r3
-0105: 83 0e         xec     x010e,r3
-0106: 83 13         xec     x0113,r3
-0107: 83 18         xec     x0118,r3
-0108: e0 18         jmp     x0018
+0104: 83 09 x0104:  xec     x0109,r3		; r1 = 0
+0105: 83 0e         xec     x010e,r3		; r1 = 1
+0106: 83 13         xec     x0113,r3		; r1 = 2
+0107: 83 18         xec     x0118,r3		; r1 = 3
+0108: e0 18         jmp     x0018		; r1 = 4 (done)
 
-0109: c0 4d x0109:  xmit    4dh,aux
+0109: c0 4d x0109:  xmit    4dh,aux		; tracks (lsb)
 010a: c0 00         xmit    0h,aux
 010b: c0 00         xmit    0h,aux
 010c: c0 00         xmit    0h,aux
 010d: c0 99         xmit    99h,aux
 
-010e: c0 00 x010e:  xmit    0h,aux
+010e: c0 00 x010e:  xmit    0h,aux		; tracks (msb)
 010f: c0 01         xmit    1h,aux
 0110: c0 01         xmit    1h,aux
 0111: c0 01         xmit    1h,aux
 0112: c0 00         xmit    0h,aux
 
-0113: c0 01 x0113:  xmit    1h,aux
+0113: c0 01 x0113:  xmit    1h,aux		; heads
 0114: c0 02         xmit    2h,aux
 0115: c0 04         xmit    4h,aux
 0116: c0 06         xmit    6h,aux
 0117: c0 04         xmit    4h,aux
 
-0118: c0 10 x0118:  xmit    10h,aux
+0118: c0 10 x0118:  xmit    10h,aux		; sectors per track
 0119: c0 20         xmit    20h,aux
 011a: c0 20         xmit    20h,aux
 011b: c0 20         xmit    20h,aux
@@ -590,8 +607,10 @@ FDC_DATA     EQU  5fh
 0121: a0 23 x0121:  nzt     aux,x0123
 0122: e1 24         jmp     x0124
 0123: e0 9e x0123:  jmp     x009e
+
 0124: c9 15 x0124:  xmit    15h,r11		; r11 = 0x15 = 21
-0125: e6 3d         jmp     x063d
+0125: e6 3d         jmp     x063d		; select drive
+
 0126: a0 28 x0126:  nzt     aux,x0128
 0127: e1 2a         jmp     x012a
 0128: c1 48 x0128:  xmit    48h,r1
@@ -616,31 +635,37 @@ FDC_DATA     EQU  5fh
 ; no other bytes need be read.
 
 0136: c9 19 x0136:  xmit    19h,r11		; r11 = 0x19 = 25
-0137: e6 3d         jmp     x063d		; returns to x0138
+0137: e6 3d         jmp     x063d		; select drive
 
-0138: a0 3a x0138:  nzt     aux,x013a
-0139: e1 3b         jmp     x013b
-013a: e1 50 x013a:  jmp     x0150
+0138: a0 3a x0138:  nzt     aux,x013a		; did the select work ?
+0139: e1 3b         jmp     x013b		; no.
+013a: e1 50 x013a:  jmp     x0150		; yes !
 
 013b: cf 5d x013b:  xmit    CSR4,ivr
-013c: b8 3e         nzt     sriv[7],x013e
+013c: b8 3e         nzt     sriv[7],x013e	; test track0
 013d: e1 4b         jmp     x014b
+
 013e: c0 01 x013e:  xmit    1h,aux		; aux = 1
 013f: c1 00         xmit    0h,r1		; r1 = 0
 0140: 85 49         xec     x0149,r5
-0141: cf 5c         xmit    CSR3,ivr
-0142: d8 20         xmit    0h,driv[7]
+0141: cf 5c         xmit    CSR3,ivr		; r3 = 0xC8 for fd, 0xE7 for hd
+0142: d8 20         xmit    0h,driv[7]		; DIR = 0
 0143: cf 5c x0143:  xmit    CSR3,ivr
-0144: d9 21         xmit    1h,driv[6]
-0145: 21 01 x0145:  add     r1,r1
-0146: a1 45         nzt     r1,x0145
-0147: d9 20         xmit    0h,driv[6]
+0144: d9 21         xmit    1h,driv[6]		; STEP = 1
+
+0145: 21 01 x0145:  add     r1,r1		; r1++
+0146: a1 45         nzt     r1,x0145		; delay
+
+0147: d9 20         xmit    0h,driv[6]		; STEP = 0
 0148: e1 51         jmp     x0151
 
 ; mini table indexed via r5 above (drive)
+; we count from this value to overflow into zero
+; so a bigger value is a smaller step pulse.
 0149: c3 c8 x0149:  xmit    0c8h,r3		; for fd
 014a: c3 e7         xmit    0e7h,r3		; for hd
 
+; we are done.
 014b: c1 00 x014b:  xmit    0h,r1		; r1 = 0
 014c: c0 48         xmit    48h,aux		; aux = 0x48
 014d: 25 0f         add     r5,ivr
@@ -649,13 +674,14 @@ FDC_DATA     EQU  5fh
 
 0150: e1 28 x0150:  jmp     x0128		; joins seek above
 
-0151: 03 02 x0151:  move    r3,r2
-0152: 21 01 x0152:  add     r1,r1		; r1 = r1 + aux
-0153: a1 52         nzt     r1,x0152
-0154: 22 02         add     r2,r2		; r2 = r2 + aux
-0155: a2 52         nzt     r2,x0152
+0151: 03 02 x0151:  move    r3,r2		; r2 = r3
+0152: 21 01 x0152:  add     r1,r1		; r1++
+0153: a1 52         nzt     r1,x0152		; delay
+0154: 22 02         add     r2,r2		; r2++
+0155: a2 52         nzt     r2,x0152		; delay
+
 0156: cf 5d         xmit    CSR4,ivr
-0157: b8 23         nzt     sriv[7],x0143
+0157: b8 23         nzt     sriv[7],x0143	; test track0
 0158: e7 73         jmp     x0773
 
 ; ---------------------------
@@ -676,7 +702,8 @@ FDC_DATA     EQU  5fh
 0165: cf 3e x0165:  xmit    M_STATUS,ivr
 0166: db 21         xmit    1h,driv[4]
 0167: c9 1b         xmit    1bh,r11		; r11 = 0x1b = 27
-0168: e6 3d         jmp     x063d
+0168: e6 3d         jmp     x063d		; select drive
+
 0169: a0 6b x0169:  nzt     aux,x016b
 016a: e1 6c         jmp     x016c
 016b: e2 24 x016b:  jmp     x0224
@@ -1127,7 +1154,8 @@ FDC_DATA     EQU  5fh
 0320: db 21         xmit    1h,driv[4]
 0321: da 20         xmit    0h,driv[5]
 0322: c9 23         xmit    23h,r11			; r11 = 0x23 = 35
-0323: e6 3d         jmp     x063d
+0323: e6 3d         jmp     x063d			; select drive
+
 0324: a0 26 x0324:  nzt     aux,x0326
 0325: e3 27         jmp     x0327
 0326: e2 24 x0326:  jmp     x0224
@@ -1946,17 +1974,29 @@ FDC_DATA     EQU  5fh
 063b: cf 4c         xmit    VAL_4,ivr
 063c: e3 bc         jmp     x03bc
 
-; subroutine
-; called from several places
+; "select_drive"
+; subroutine to select a drive.
+; called from several places.
+;
+; returns a status in the aux register.
+; 0 is failure
+; 2 is drive says "ready"
+;
 ; CSR3 is a sort of GPIO that accesses 7 bits
+; Writing to driv[5:4] accesses drive select bits
+;  [DS1:DS0]
+; Then reading sriv[0] (from CSR1) accesses "disk status",
+; which is Bit 7 in the 8x330 datasheet and pin 17 on the chip.
+; This pin is routed to "READY" from J9/10.
 
 063d: cf 5c x063d:  xmit    CSR3,ivr
 063e: c0 01         xmit    1h,aux		; aux = 1
 063f: a5 42         nzt     r5,x0642
-0640: 00 5b         move    aux,driv[5:4]	; fd
+0640: 00 5b         move    aux,driv[5:4]	; fd, DS = 1
 0641: e6 46         jmp     x0646
 0642: c0 02 x0642:  xmit    2h,aux		; aux = 2
-0643: 00 5b         move    aux,driv[5:4]	; hd
+0643: 00 5b         move    aux,driv[5:4]	; hd, DS = 2
+
 0644: cf 4a         xmit    VAL_2,ivr
 0645: da 20         xmit    0h,driv[5]
 
@@ -2343,14 +2383,17 @@ FDC_DATA     EQU  5fh
 079a: cf 03         xmit    HD_STATUS,ivr
 079b: bc 3b x079b:  nzt     sriv[3],x079b
 079c: e3 a1         jmp     x03a1
-079d: a5 9f x079d:  nzt     r5,x079f
+
+079d: a5 9f x079d:  nzt     r5,x079f		; non-zero is HD
 079e: e1 2e         jmp     x012e
+
 079f: cf 5d x079f:  xmit    CSR4,ivr
-07a0: bb 22         nzt     sriv[4],x07a2
+07a0: bb 22         nzt     sriv[4],x07a2	; test seek complete
 07a1: e1 2e         jmp     x012e
 07a2: cf 5d x07a2:  xmit    CSR4,ivr
-07a3: bb 22         nzt     sriv[4],x07a2
+07a3: bb 22         nzt     sriv[4],x07a2	; test seek complete
 07a4: e1 2e         jmp     x012e
+
 07a5: cf 4a x07a5:  xmit    VAL_2,ivr
 07a6: da 20         xmit    0h,driv[5]
 07a7: e0 18         jmp     x0018

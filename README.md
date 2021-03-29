@@ -29,4 +29,4 @@ P11 and P12 were the connectors to floppy drives (you could have two).
 
 The HDC controller had 2 big edge connectors.  P10 was a 50 pin connector and
 was a sort of bus between it and the CPU card.  P9 was an 80 pin connector and
-carried the drive signals.
+carried most (but not all) of the drive signals.
