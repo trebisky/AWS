@@ -132,8 +132,8 @@ DMA          EQU  3fh	; CPU sees this at 0x80 (DMA data)
 ; the VAL registers serve as "scratch space" for the 8x300
 ; (this is a 16 item "register file"
 
-VAL_0        EQU  48h	; never used
-VAL_1        EQU  49h	; never used
+VAL_0        EQU  48h	; used "indirectly"
+VAL_1        EQU  49h	; used "indirectly"
 VAL_2        EQU  4ah
 VAL_3        EQU  4bh
 VAL_4        EQU  4ch
@@ -606,6 +606,7 @@ FDC_DATA     EQU  5fh
 011e: c2 fe         xmit    0feh,r2
 011f: c9 14         xmit    14h,r11		; r11 = 0x14 = 20
 0120: e6 6c         jmp     x066c
+
 0121: a0 23 x0121:  nzt     aux,x0123
 0122: e1 24         jmp     x0124
 0123: e0 9e x0123:  jmp     x009e
@@ -1171,6 +1172,7 @@ FDC_DATA     EQU  5fh
 032a: 80 2e         xec     x032e,aux
 032b: c9 25         xmit    25h,r11			; r11 = 0x25 = 37
 032c: e6 94         jmp     x0694
+
 032d: e3 33 x032d:  jmp     x0333
 
 ; table for above xec follows
@@ -2100,32 +2102,41 @@ FDC_DATA     EQU  5fh
 
 ; subroutine
 ; called by seek, format, and read/write
+; enter with drive type in aux
 
 0694: 00 04 x0694:  move    aux,r4		; r4 = drive type
 0695: 05 00         move    r5,aux		; aux = hd/fd
 0696: 04 05         move    r4,r5		; r5 = drive type
 0697: c4 48         xmit    48h,r4		; r4 = 0x48
 0698: 24 04         add     r4,r4		; r4 = r4 + aux
+
+; these addresses are VAL_0 or VAL_1 in the scratch area of the 8x330
+
 0699: 04 0f         move    r4,ivr		; access 0x48 or 0x49
-069a: 1f 02         move    sriv,r2
+069a: 1f 02         move    sriv,r2		; read it to r2
 069b: cf 4c         xmit    VAL_4,ivr
-069c: 1f 01         move    sriv,r1
+069c: 1f 01         move    sriv,r1		; read VAL_4 to r1
+
+; xor with a mask of all ones inverts the bits
+
 069d: c0 ff         xmit    0ffh,aux
-069e: 62 03         xor     r2,r3
-069f: c0 01         xmit    1h,aux
+069e: 62 03         xor     r2,r3		; r3 = ~r2
+069f: c0 01         xmit    1h,aux		; aux = 1
 06a0: 23 00         add     r3,aux
 06a1: 08 02         move    ovf,r2
 06a2: 21 03         add     r1,r3
 06a3: a3 a5         nzt     r3,x06a5
-06a4: e7 1a         jmp     x071a
+06a4: e7 1a         jmp     x071a		; go to wrap up
+
 06a5: cf 5c x06a5:  xmit    CSR3,ivr
 06a6: 08 01         move    ovf,r1
 06a7: a1 ab         nzt     r1,x06ab
 06a8: a2 ab         nzt     r2,x06ab
-06a9: d8 20         xmit    0h,driv[7]
+06a9: d8 20         xmit    0h,driv[7]		; DIR = 0
 06aa: e6 b1         jmp     x06b1
+
 06ab: cf 5c x06ab:  xmit    CSR3,ivr
-06ac: d8 21         xmit    1h,driv[7]
+06ac: d8 21         xmit    1h,driv[7]		; DIR = 1
 06ad: c0 ff         xmit    0ffh,aux
 06ae: 63 03         xor     r3,r3
 06af: c0 01         xmit    1h,aux		; aux = 1
@@ -2138,123 +2149,159 @@ FDC_DATA     EQU  5fh
 06b5: e6 f9         jmp     x06f9		; hd 3
 06b6: e6 b7         jmp     x06b7		; hd 4
 
+# Handle HD type 4
 06b7: c0 ff x06b7:  xmit    0ffh,aux
 06b8: 63 00         xor     r3,aux
 06b9: a0 bb         nzt     aux,x06bb
 06ba: e6 e6         jmp     x06e6
-06bb: c0 01 x06bb:  xmit    1h,aux
-06bc: c1 e0         xmit    0e0h,r1
+
+06bb: c0 01 x06bb:  xmit    1h,aux		; aux = 1
+06bc: c1 e0         xmit    0e0h,r1		; for delay
 06bd: cf 5c         xmit    CSR3,ivr
-06be: d9 21         xmit    1h,driv[6]
-06bf: 21 01 x06bf:  add     r1,r1
+06be: d9 21         xmit    1h,driv[6]		; STEP = 1
+
+06bf: 21 01 x06bf:  add     r1,r1		; delay loop
 06c0: a1 bf         nzt     r1,x06bf
+
 06c1: cf 5c         xmit    CSR3,ivr
-06c2: d9 20         xmit    0h,driv[6]
-06c3: c2 f5         xmit    0f5h,r2
-06c4: 21 01 x06c4:  add     r1,r1
+06c2: d9 20         xmit    0h,driv[6]		; STEP = 0
+
+06c3: c2 f5         xmit    0f5h,r2		; setup delay
+06c4: 21 01 x06c4:  add     r1,r1		; delay loop
 06c5: a1 c4         nzt     r1,x06c4
 06c6: 22 02         add     r2,r2
-06c7: a2 c4         nzt     r2,x06c4
+06c7: a2 c4         nzt     r2,x06c4		; more delay
+
 06c8: cf 5c         xmit    CSR3,ivr
-06c9: d9 21         xmit    1h,driv[6]
-06ca: 21 01 x06ca:  add     r1,r1
+06c9: d9 21         xmit    1h,driv[6]		; STEP = 1
+
+06ca: 21 01 x06ca:  add     r1,r1		; delay loop
 06cb: a1 ca         nzt     r1,x06ca
-06cc: d9 20         xmit    0h,driv[6]
+
+06cc: d9 20         xmit    0h,driv[6]		; STEP = 0
+
 06cd: c2 fb         xmit    0fbh,r2
-06ce: 21 01 x06ce:  add     r1,r1
+06ce: 21 01 x06ce:  add     r1,r1		; delay loop
 06cf: a1 ce         nzt     r1,x06ce
 06d0: 22 02         add     r2,r2
-06d1: a2 ce         nzt     r2,x06ce
-06d2: 23 03 x06d2:  add     r3,r3
+06d1: a2 ce         nzt     r2,x06ce		; more delay
+
+06d2: 23 03 x06d2:  add     r3,r3		; big loop
 06d3: c0 ff         xmit    0ffh,aux
 06d4: 63 00         xor     r3,aux
 06d5: a0 d7         nzt     aux,x06d7
-06d6: e6 e6         jmp     x06e6
-06d7: c4 fe x06d7:  xmit    0feh,r4
+06d6: e6 e6         jmp     x06e6		; exit big loop
+
+06d7: c4 fe x06d7:  xmit    0feh,r4		; do this twice
 06d8: c0 01         xmit    1h,aux
+
 06d9: cf 5c x06d9:  xmit    CSR3,ivr
-06da: d9 21         xmit    1h,driv[6]
-06db: 21 01 x06db:  add     r1,r1
+06da: d9 21         xmit    1h,driv[6]		; STEP = 1
+
+06db: 21 01 x06db:  add     r1,r1		; delay
 06dc: a1 db         nzt     r1,x06db
-06dd: d9 20         xmit    0h,driv[6]
+
+06dd: d9 20         xmit    0h,driv[6]		; STEP = 0
+
 06de: c2 fb         xmit    0fbh,r2
-06df: 21 01 x06df:  add     r1,r1
+06df: 21 01 x06df:  add     r1,r1		; delay
 06e0: a1 df         nzt     r1,x06df
 06e1: 22 02         add     r2,r2
-06e2: a2 df         nzt     r2,x06df
+06e2: a2 df         nzt     r2,x06df		; more delay
+
 06e3: 24 04         add     r4,r4
-06e4: a4 d9         nzt     r4,x06d9
-06e5: e6 d2         jmp     x06d2
+06e4: a4 d9         nzt     r4,x06d9		; do twice
+06e5: e6 d2         jmp     x06d2		; big loop
+
 06e6: c0 01 x06e6:  xmit    1h,aux
 06e7: cf 5c         xmit    CSR3,ivr
-06e8: d9 21         xmit    1h,driv[6]
+06e8: d9 21         xmit    1h,driv[6]		; STEP = 1
+
 06e9: c1 e0         xmit    0e0h,r1
 06ea: 21 01 x06ea:  add     r1,r1
 06eb: a1 ea         nzt     r1,x06ea
-06ec: d9 20         xmit    0h,driv[6]
+
+06ec: d9 20         xmit    0h,driv[6]		; STEP = 0
 06ed: c2 e9         xmit    0e9h,r2
 06ee: 21 01 x06ee:  add     r1,r1
 06ef: a1 ee         nzt     r1,x06ee
 06f0: 22 02         add     r2,r2
-06f1: a2 ee         nzt     r2,x06ee
+06f1: a2 ee         nzt     r2,x06ee		; more delay
+
 06f2: c1 80         xmit    80h,r1
 06f3: cf 5c         xmit    CSR3,ivr
-06f4: d9 21         xmit    1h,driv[6]
+06f4: d9 21         xmit    1h,driv[6]		; STEP = 1
 06f5: 21 01 x06f5:  add     r1,r1
-06f6: a1 f5         nzt     r1,x06f5
-06f7: d9 20         xmit    0h,driv[6]
+06f6: a1 f5         nzt     r1,x06f5		; delay
+
+06f7: d9 20         xmit    0h,driv[6]		; STEP = 0
 06f8: e7 1a         jmp     x071a
-06f9: c0 01 x06f9:  xmit    1h,aux
+
+# Handle HD type 1,2,3
+06f9: c0 01 x06f9:  xmit    1h,aux		; aux = 1
 06fa: cf 5c         xmit    CSR3,ivr
-06fb: d9 21         xmit    1h,driv[6]
+06fb: d9 21         xmit    1h,driv[6]		; STEP = 1
+
 06fc: c1 ee         xmit    0eeh,r1
 06fd: 21 01 x06fd:  add     r1,r1
-06fe: a1 fd         nzt     r1,x06fd
-06ff: d9 20         xmit    0h,driv[6]
+06fe: a1 fd         nzt     r1,x06fd		; delay
+
+06ff: d9 20         xmit    0h,driv[6]		; STEP = 0
+
 0700: c2 f4         xmit    0f4h,r2
 0701: c1 e0 x0701:  xmit    0e0h,r1
 0702: 21 01 x0702:  add     r1,r1
-0703: a1 02         nzt     r1,x0702
+0703: a1 02         nzt     r1,x0702		; inner delay
 0704: 22 02         add     r2,r2
-0705: a2 01         nzt     r2,x0701
+0705: a2 01         nzt     r2,x0701		; more delay
+
 0706: 23 03         add     r3,r3
-0707: a3 a8         nzt     r3,x07a8
+0707: a3 a8         nzt     r3,x07a8		; x07a8 bounces to x06f9
 0708: e7 1a         jmp     x071a
+
+# Handle floppy
 0709: c0 01 x0709:  xmit    1h,aux
 070a: c2 f8         xmit    0f8h,r2
 070b: c1 00         xmit    0h,r1
 070c: cf 5c         xmit    CSR3,ivr
-070d: d9 21         xmit    1h,driv[6]
+070d: d9 21         xmit    1h,driv[6]		; STEP = 1
+
 070e: 21 01 x070e:  add     r1,r1
 070f: a1 0e         nzt     r1,x070e
 0710: 22 02         add     r2,r2
-0711: a2 0e         nzt     r2,x070e
-0712: d9 20         xmit    0h,driv[6]
+0711: a2 0e         nzt     r2,x070e		; pulse delay
+
+0712: d9 20         xmit    0h,driv[6]		; STEP = 0
+
 0713: c2 cf         xmit    0cfh,r2
 0714: 21 01 x0714:  add     r1,r1
 0715: a1 14         nzt     r1,x0714
 0716: 22 02         add     r2,r2
-0717: a2 14         nzt     r2,x0714
-0718: 23 03         add     r3,r3
+0717: a2 14         nzt     r2,x0714		; between pulse delay
+
+0718: 23 03         add     r3,r3		; how many pulses
 0719: a3 09         nzt     r3,x0709
+
+; wrap up
 071a: a5 1c x071a:  nzt     r5,x071c
 071b: e7 1d         jmp     x071d
-071c: c5 01 x071c:  xmit    1h,r5
+071c: c5 01 x071c:  xmit    1h,r5		; r5 = 1
 071d: a5 1f x071d:  nzt     r5,x071f
 071e: e7 60         jmp     x0760
 071f: e7 20 x071f:  jmp     x0720
 0720: cf 5d x0720:  xmit    CSR4,ivr
-0721: bb 23         nzt     sriv[4],x0723
+0721: bb 23         nzt     sriv[4],x0723	; test seek complete
 0722: e7 26         jmp     x0726
 0723: cf 5d x0723:  xmit    CSR4,ivr
-0724: bb 23         nzt     sriv[4],x0723
+0724: bb 23         nzt     sriv[4],x0723	; test seek complete
 0725: e7 60         jmp     x0760
+
 0726: cf 4c x0726:  xmit    VAL_4,ivr
 0727: 1f 04         move    sriv,r4
 0728: c0 48         xmit    48h,aux
 0729: 25 0f         add     r5,ivr
-072a: 04 1f         move    r4,driv
-072b: c0 00         xmit    0h,aux
+072a: 04 1f         move    r4,driv		; {48,49} = r4
+072b: c0 00         xmit    0h,aux		; aux = 0
 072c: e7 b0         jmp     x07b0		; BIG RETURN
 
 ; Here is where we write something into the status register
