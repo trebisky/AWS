@@ -32,7 +32,13 @@
 ; nzt - branch if data is not zero
 ; xec - execute at offset
 ; jmp - simple jump
-
+;
+; with the disassembler I used.
+; instructions "flow" left to right (destination is on right)
+; Bits are numbered in the "normal" way with bit 7 the msb.
+; BUT note that the datasheets for the 8x300 family chips all
+; use the reverse convention.  Any many signals on the schematic
+; follow this "reverse" convention -- so beware.
 
 ; After some initial inspection, I assigned the following values to
 ; various registers on the IV bus.
@@ -91,6 +97,8 @@ HD_STATUS    EQU  3h	; read only (chip 6A)
 ; Lastly consider the device at chip location 6A that we only read.
 ; -- this is at address 3
 ;
+;  "HD_STATUS"
+;
 ; lets figure than IV7 is the LSB, and so is UD7.
 ; Then the signals available on this chip are,
 ; starting with the LSB:
@@ -103,6 +111,11 @@ HD_STATUS    EQU  3h	; read only (chip 6A)
 ;  UD2 - FULL*		sriv[5]
 ;  UD1 - DMACK*		sriv[6]
 ;  UD0 - DRTYPE1-	sriv[7]
+
+; Note the drive type bits.  This is a sneaky business done by Convergent.
+; They usurped the DS3 and DS4 drive select signals on the hard drive and
+; they read them by the controller.  The two bits select one of four
+; supported drive types.
 
 ; 8x320 bus interface device.
 ; Addresses 0x30 to 0x3f are the 8x320 dual port bus interface gadget
@@ -153,6 +166,23 @@ CSR1         EQU  5ah
 CSR2         EQU  5bh
 CSR3         EQU  5ch
 CSR4         EQU  5dh
+
+; CSR3 has 7 bits (one bit is permanently zero)
+; all are outputs.
+;   driv[7] = DIR (for seek)
+;   driv[6] = STEP (for seek)
+;   driv[5] = DS1 (selects floppy)
+;   driv[4] = DS2 (select hard drive)
+;   driv[3] = HDSEL2 (head)
+;   driv[2] = HDSEL1 (head)
+;   driv[1] = HDSEL0 (head)
+;   driv[0] = permanently zero
+
+; CSR4 has 4 bits, all are inputs
+;   sriv[7] = TRACK0
+;   sriv[6] = INDEX
+;   sriv[5] = WFAULT (aka WPRO)
+;   sriv[4] = SEEK COMPLETE
 
 SECTOR_LEN   EQU  5eh	; never used
 FDC_DATA     EQU  5fh
