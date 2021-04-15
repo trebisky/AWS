@@ -1,0 +1,2111 @@
+; This is the disassembly of the fancier pair of bipolar ROMS on
+;  the 27077 AWS turbo disk controller board.
+;
+; aws-27077.dis
+;
+; This is code for a Signetic N8x300 processor.
+; -----------------------------------
+;
+; Notes   Tom Trebisky  4-14-2021
+;
+; Convergent Technologies AWS turbo disk controller
+;
+; -----------------------------------
+; This disassembly is virtually unannotated, my intense study has been
+; directed at the firmware on the board that AJ shipped to me.
+;
+; This firmware does have differences.
+;  in particular the drive config table does have differences.
+;  this needs detailed study, which has yet to be done.
+
+
+DATA_PORT    EQU  1h
+CMD_PORT     EQU  2h
+STATUS_PORT  EQU  3h
+IO-0         EQU  30h
+IO-1         EQU  31h
+IO-2         EQU  32h
+IO-3         EQU  33h
+IO-4         EQU  34h
+IO-5         EQU  35h
+IO-6         EQU  36h
+IO-7         EQU  37h
+IO-8         EQU  38h
+IO-9         EQU  39h
+IO-A         EQU  3ah
+IO-B         EQU  3bh
+IO-C         EQU  3ch
+IO-D         EQU  3dh
+IO-E         EQU  3eh
+IO-F         EQU  3fh
+VAL0         EQU  48h
+VAL1         EQU  49h
+VAL2         EQU  4ah
+VAL3         EQU  4bh
+VAL4         EQU  4ch
+VAL5         EQU  4dh
+VAL6         EQU  4eh
+VAL7         EQU  4fh
+VAL8         EQU  50h
+VAL9         EQU  51h
+VALA         EQU  52h
+VALB         EQU  53h
+VALC         EQU  54h
+VALD         EQU  55h
+VALE         EQU  56h
+VALF         EQU  57h
+CSR1         EQU  5ah
+CSR2         EQU  5bh
+CSR3         EQU  5ch
+CSR4         EQU  5dh
+SECTOR_LEN   EQU  5eh
+FDC_DATA     EQU  5fh
+
+0000: 00 00         nop     
+0001: e0 02         jmp     x0002
+0002: cf 5a x0002:  xmit    CSR1,ivr
+0003: d8 21         xmit    1h,driv[7]
+0004: cf 5c         xmit    CSR3,ivr
+0005: db 40         xmit    0h,driv[5:4]
+0006: cf 30         xmit    IO-0,ivr
+0007: c0 41         xmit    41h,aux
+0008: 00 1f         move    aux,driv
+0009: cf 02         xmit    CMD_PORT,ivr
+000a: c1 80         xmit    80h,r1
+000b: 01 1f         move    r1,driv
+000c: c1 00         xmit    0h,r1
+000d: cf 31         xmit    IO-1,ivr
+000e: 01 1f         move    r1,driv
+000f: cf 3e         xmit    IO-E,ivr
+0010: 01 1f         move    r1,driv
+0011: cf 3b         xmit    IO-B,ivr
+0012: df 40         xmit    0h,driv[1:0]
+0013: d8 20         xmit    0h,driv[7]
+0014: cf 4a         xmit    VAL2,ivr
+0015: 01 1f         move    r1,driv
+0016: cf 5c         xmit    CSR3,ivr
+0017: d9 20         xmit    0h,driv[6]
+0018: c0 00         xmit    0h,aux
+0019: cf 48         xmit    VAL0,ivr
+001a: 00 1f         move    aux,driv
+001b: cf 49         xmit    VAL1,ivr
+001c: 00 1f         move    aux,driv
+001d: cf 52         xmit    VALA,ivr
+001e: 00 1f         move    aux,driv
+001f: cf 31 x001f:  xmit    IO-1,ivr
+0020: da 20         xmit    0h,driv[5]
+0021: cf 5a         xmit    CSR1,ivr
+0022: c0 ff         xmit    0ffh,aux
+0023: 00 1f         move    aux,driv
+0024: c0 40         xmit    40h,aux
+0025: cf 5b         xmit    CSR2,ivr
+0026: 00 1f         move    aux,driv
+0027: cf 5f         xmit    FDC_DATA,ivr
+0028: 00 1f         move    aux,driv
+0029: cf 4a         xmit    VAL2,ivr
+002a: ba 2c         nzt     sriv[5],x002c
+002b: e0 43         jmp     x0043
+002c: c0 01 x002c:  xmit    1h,aux
+002d: c1 00         xmit    0h,r1
+002e: c2 00         xmit    0h,r2
+002f: 21 01 x002f:  add     r1,r1
+0030: e0 6a         jmp     x006a
+0031: a1 2f x0031:  nzt     r1,x002f
+0032: 22 02         add     r2,r2
+0033: a2 2f         nzt     r2,x002f
+0034: cf 4a         xmit    VAL2,ivr
+0035: da 20         xmit    0h,driv[5]
+0036: cf 3b         xmit    IO-B,ivr
+0037: e0 40         jmp     x0040
+0038: 00 00         nop     
+0039: 00 00         nop     
+003a: 00 00         nop     
+003b: 00 00         nop     
+003c: 00 00         nop     
+003d: 00 00         nop     
+003e: 00 00         nop     
+003f: 00 00         nop     
+0040: b8 22 x0040:  nzt     sriv[7],x0042
+0041: e0 43         jmp     x0043
+0042: e0 6a x0042:  jmp     x006a
+0043: cf 5c x0043:  xmit    CSR3,ivr
+0044: db 41         xmit    1h,driv[5:4]
+0045: cf 5a x0045:  xmit    CSR1,ivr
+0046: 1f 21         move    sriv[0],r1
+0047: cf 5a         xmit    CSR1,ivr
+0048: 1f 20         move    sriv[0],aux
+0049: 61 00         xor     r1,aux
+004a: a0 45         nzt     aux,x0045
+004b: cf 5c         xmit    CSR3,ivr
+004c: db 42         xmit    2h,driv[5:4]
+004d: cf 5a x004d:  xmit    CSR1,ivr
+004e: 1f 22         move    sriv[0],r2
+004f: cf 5a         xmit    CSR1,ivr
+0050: 1f 20         move    sriv[0],aux
+0051: 62 00         xor     r2,aux
+0052: a0 4d         nzt     aux,x004d
+0053: cf 5c         xmit    CSR3,ivr
+0054: db 40         xmit    0h,driv[5:4]
+0055: c0 01         xmit    1h,aux
+0056: 61 01         xor     r1,r1
+0057: 62 02         xor     r2,r2
+0058: cf 3e         xmit    IO-E,ivr
+0059: 01 3f         move    r1,driv[0]
+005a: 02 3e         move    r2,driv[1]
+005b: cf 3b         xmit    IO-B,ivr
+005c: 01 00         move    r1,aux
+005d: 7f 20         xor     sriv[0],aux
+005e: a0 6f         nzt     aux,x006f
+005f: cf 3b x005f:  xmit    IO-B,ivr
+0060: 02 00         move    r2,aux
+0061: 7e 20         xor     sriv[1],aux
+0062: a0 7a         nzt     aux,x007a
+0063: c9 01 x0063:  xmit    1h,r11
+0064: e7 2c         jmp     x072c
+0065: cf 3e x0065:  xmit    IO-E,ivr
+0066: 1f 40         move    sriv[1:0],aux
+0067: cf 3b         xmit    IO-B,ivr
+0068: 00 5f         move    aux,driv[1:0]
+0069: e0 2c         jmp     x002c
+006a: cf 31 x006a:  xmit    IO-1,ivr
+006b: 1a 23         move    sriv[5],r3
+006c: a3 6e         nzt     r3,x006e
+006d: e0 31         jmp     x0031
+006e: e0 8a x006e:  jmp     x008a
+006f: c5 00 x006f:  xmit    0h,r5
+0070: cf 3e         xmit    IO-E,ivr
+0071: c0 01         xmit    1h,aux
+0072: 1f 21         move    sriv[0],r1
+0073: 61 01         xor     r1,r1
+0074: 01 a1         move    r1>>>5,r1
+0075: c9 02         xmit    2h,r11
+0076: e0 85         jmp     x0085
+0077: c9 03 x0077:  xmit    3h,r11
+0078: e7 27         jmp     x0727
+0079: e0 5f x0079:  jmp     x005f
+007a: c5 01 x007a:  xmit    1h,r5
+007b: cf 3e         xmit    IO-E,ivr
+007c: c0 01         xmit    1h,aux
+007d: 1e 21         move    sriv[1],r1
+007e: 61 01         xor     r1,r1
+007f: 01 a1         move    r1>>>5,r1
+0080: c9 04         xmit    4h,r11
+0081: e0 85         jmp     x0085
+0082: c9 05 x0082:  xmit    5h,r11
+0083: e7 27         jmp     x0727
+0084: e0 63 x0084:  jmp     x0063
+0085: c0 33 x0085:  xmit    33h,aux
+0086: 25 0f         add     r5,ivr
+0087: c0 c0         xmit    0c0h,aux
+0088: 25 1f         add     r5,driv
+0089: e7 c0         jmp     x07c0
+008a: cf 3d x008a:  xmit    IO-D,ivr
+008b: 19 25         move    sriv[6],r5
+008c: 1f 86         move    sriv[3:0],r6
+008d: cf 4a         xmit    VAL2,ivr
+008e: 05 3c         move    r5,driv[3]
+008f: 86 90         xec     x0090,r6
+0090: e0 a0 x0090:  jmp     x00a0
+0091: e0 a0         jmp     x00a0
+0092: e0 a0         jmp     x00a0
+0093: e0 ad         jmp     x00ad
+0094: e0 bc         jmp     x00bc
+0095: e3 27         jmp     x0327
+0096: e3 27         jmp     x0327
+0097: e1 36         jmp     x0136
+0098: e0 cc         jmp     x00cc
+0099: e0 a0         jmp     x00a0
+009a: e0 a0         jmp     x00a0
+009b: e0 a0         jmp     x00a0
+009c: e0 ec         jmp     x00ec
+009d: e1 5e         jmp     x015e
+009e: e0 a0         jmp     x00a0
+009f: e1 1d         jmp     x011d
+00a0: c9 06 x00a0:  xmit    6h,r11
+00a1: e7 27         jmp     x0727
+00a2: c0 33 x00a2:  xmit    33h,aux
+00a3: 25 0f         add     r5,ivr
+00a4: c0 80         xmit    80h,aux
+00a5: 25 1f         add     r5,driv
+00a6: cf 3b         xmit    IO-B,ivr
+00a7: d8 21         xmit    1h,driv[7]
+00a8: cf 3e x00a8:  xmit    IO-E,ivr
+00a9: da 21         xmit    1h,driv[5]
+00aa: cf 02         xmit    CMD_PORT,ivr
+00ab: d9 21         xmit    1h,driv[6]
+00ac: e7 96         jmp     x0796
+00ad: c0 33 x00ad:  xmit    33h,aux
+00ae: 25 01         add     r5,r1
+00af: cf 3e         xmit    IO-E,ivr
+00b0: da 21         xmit    1h,driv[5]
+00b1: c9 07         xmit    7h,r11
+00b2: e7 1a         jmp     x071a
+00b3: c0 35 x00b3:  xmit    35h,aux
+00b4: 25 01         add     r5,r1
+00b5: c9 08         xmit    8h,r11
+00b6: e7 1a         jmp     x071a
+00b7: c0 37 x00b7:  xmit    37h,aux
+00b8: 25 01         add     r5,r1
+00b9: c9 09         xmit    9h,r11
+00ba: e7 1a         jmp     x071a
+00bb: e0 bc x00bb:  jmp     x00bc
+00bc: c9 0a x00bc:  xmit    0ah,r11
+00bd: e6 58         jmp     x0658
+00be: cf 3e x00be:  xmit    IO-E,ivr
+00bf: da 21         xmit    1h,driv[5]
+00c0: c9 0b         xmit    0bh,r11
+00c1: e6 6a         jmp     x066a
+00c2: c9 0c x00c2:  xmit    0ch,r11
+00c3: e7 24         jmp     x0724
+00c4: c0 39 x00c4:  xmit    39h,aux
+00c5: 25 01         add     r5,r1
+00c6: c9 0d         xmit    0dh,r11
+00c7: e7 1a         jmp     x071a
+00c8: cf 3e x00c8:  xmit    IO-E,ivr
+00c9: c0 00         xmit    0h,aux
+00ca: 00 1f         move    aux,driv
+00cb: e0 d7         jmp     x00d7
+00cc: cf 4a x00cc:  xmit    VAL2,ivr
+00cd: 1f 43         move    sriv[1:0],r3
+00ce: 83 e4         xec     x00e4,r3
+00cf: c0 33         xmit    33h,aux
+00d0: 25 01         add     r5,r1
+00d1: c9 0e         xmit    0eh,r11
+00d2: e7 1a         jmp     x071a
+00d3: cf 4a x00d3:  xmit    VAL2,ivr
+00d4: 83 e8         xec     x00e8,r3
+00d5: c9 0f         xmit    0fh,r11
+00d6: e7 2c         jmp     x072c
+00d7: cf 52 x00d7:  xmit    VALA,ivr
+00d8: 1f 00         move    sriv,aux
+00d9: a5 db         nzt     r5,x00db
+00da: c0 00         xmit    0h,aux
+00db: c9 10 x00db:  xmit    10h,r11
+00dc: e7 1c         jmp     x071c
+00dd: c0 48 x00dd:  xmit    48h,aux
+00de: 25 01         add     r5,r1
+00df: c9 11         xmit    11h,r11
+00e0: e7 1a         jmp     x071a
+00e1: cf 3b x00e1:  xmit    IO-B,ivr
+00e2: d8 20         xmit    0h,driv[7]
+00e3: e7 96         jmp     x0796
+00e4: e0 a0 x00e4:  jmp     x00a0
+00e5: c5 00         xmit    0h,r5
+00e6: c5 01         xmit    1h,r5
+00e7: c5 00         xmit    0h,r5
+00e8: e0 a0 x00e8:  jmp     x00a0
+00e9: df 20         xmit    0h,driv[0]
+00ea: de 20         xmit    0h,driv[1]
+00eb: df 20         xmit    0h,driv[0]
+00ec: cf 3e x00ec:  xmit    IO-E,ivr
+00ed: da 21         xmit    1h,driv[5]
+00ee: c9 12         xmit    12h,r11
+00ef: e7 38         jmp     x0738
+00f0: 00 03 x00f0:  move    aux,r3
+00f1: c1 ff         xmit    0ffh,r1
+00f2: c0 02         xmit    2h,aux
+00f3: c9 13 x00f3:  xmit    13h,r11
+00f4: e7 1c         jmp     x071c
+00f5: c0 01 x00f5:  xmit    1h,aux
+00f6: 21 01         add     r1,r1
+00f7: e1 00         jmp     x0100
+00f8: 00 00         nop     
+00f9: 00 00         nop     
+00fa: 00 00         nop     
+00fb: 00 00         nop     
+00fc: 00 00         nop     
+00fd: 00 00         nop     
+00fe: 00 00         nop     
+00ff: 00 00         nop     
+0100: 81 04 x0100:  xec     x0104,r1
+0101: cf 3e         xmit    IO-E,ivr
+0102: da 20         xmit    0h,driv[5]
+0103: e0 f3         jmp     x00f3
+0104: 83 09 x0104:  xec     x0109,r3
+0105: 83 0e         xec     x010e,r3
+0106: 83 13         xec     x0113,r3
+0107: 83 18         xec     x0118,r3
+0108: e0 1f         jmp     x001f
+0109: c0 4d x0109:  xmit    4dh,aux
+010a: c0 00         xmit    0h,aux
+010b: c0 00         xmit    0h,aux
+010c: c0 00         xmit    0h,aux
+010d: c0 80         xmit    80h,aux
+010e: c0 00 x010e:  xmit    0h,aux
+010f: c0 02         xmit    2h,aux
+0110: c0 01         xmit    1h,aux
+0111: c0 01         xmit    1h,aux
+0112: c0 02         xmit    2h,aux
+0113: c0 01 x0113:  xmit    1h,aux
+0114: c0 08         xmit    8h,aux
+0115: c0 04         xmit    4h,aux
+0116: c0 06         xmit    6h,aux
+0117: c0 06         xmit    6h,aux
+0118: c0 10 x0118:  xmit    10h,aux
+0119: c0 20         xmit    20h,aux
+011a: c0 20         xmit    20h,aux
+011b: c0 20         xmit    20h,aux
+011c: c0 20         xmit    20h,aux
+011d: c1 4b x011d:  xmit    4bh,r1
+011e: c2 fe         xmit    0feh,r2
+011f: c9 14         xmit    14h,r11
+0120: e6 87         jmp     x0687
+0121: a0 23 x0121:  nzt     aux,x0123
+0122: e1 24         jmp     x0124
+0123: e0 a0 x0123:  jmp     x00a0
+0124: c9 15 x0124:  xmit    15h,r11
+0125: e6 58         jmp     x0658
+0126: a0 28 x0126:  nzt     aux,x0128
+0127: e1 2a         jmp     x012a
+0128: c1 48 x0128:  xmit    48h,r1
+0129: e1 2f         jmp     x012f
+012a: c9 16 x012a:  xmit    16h,r11
+012b: e7 38         jmp     x0738
+012c: c9 17 x012c:  xmit    17h,r11
+012d: e6 b4         jmp     x06b4
+012e: c1 20 x012e:  xmit    20h,r1
+012f: c0 33 x012f:  xmit    33h,aux
+0130: 25 0f         add     r5,ivr
+0131: 01 00         move    r1,aux
+0132: 25 1f         add     r5,driv
+0133: c9 18         xmit    18h,r11
+0134: e7 27         jmp     x0727
+0135: e0 a8 x0135:  jmp     x00a8
+0136: c9 19 x0136:  xmit    19h,r11
+0137: e6 58         jmp     x0658
+0138: a0 3a x0138:  nzt     aux,x013a
+0139: e1 3b         jmp     x013b
+013a: e1 55 x013a:  jmp     x0155
+013b: cf 5d x013b:  xmit    CSR4,ivr
+013c: b8 3e         nzt     sriv[7],x013e
+013d: e1 4b         jmp     x014b
+013e: c0 01 x013e:  xmit    1h,aux
+013f: c1 00         xmit    0h,r1
+0140: 85 49         xec     x0149,r5
+0141: cf 5c         xmit    CSR3,ivr
+0142: d8 20         xmit    0h,driv[7]
+0143: cf 5c x0143:  xmit    CSR3,ivr
+0144: d9 21         xmit    1h,driv[6]
+0145: 21 01 x0145:  add     r1,r1
+0146: a1 45         nzt     r1,x0145
+0147: d9 20         xmit    0h,driv[6]
+0148: e1 56         jmp     x0156
+0149: c3 c8 x0149:  xmit    0c8h,r3
+014a: c3 e7         xmit    0e7h,r3
+014b: c1 00 x014b:  xmit    0h,r1
+014c: a5 50         nzt     r5,x0150
+014d: cf 48         xmit    VAL0,ivr
+014e: 01 1f         move    r1,driv
+014f: e1 2e         jmp     x012e
+0150: cf 49 x0150:  xmit    VAL1,ivr
+0151: 01 1f         move    r1,driv
+0152: cf 52         xmit    VALA,ivr
+0153: 01 1f         move    r1,driv
+0154: e7 8e         jmp     x078e
+0155: e1 28 x0155:  jmp     x0128
+0156: 03 02 x0156:  move    r3,r2
+0157: 21 01 x0157:  add     r1,r1
+0158: a1 57         nzt     r1,x0157
+0159: 22 02         add     r2,r2
+015a: a2 57         nzt     r2,x0157
+015b: cf 5d         xmit    CSR4,ivr
+015c: b8 23         nzt     sriv[7],x0143
+015d: e7 65         jmp     x0765
+015e: c1 40 x015e:  xmit    40h,r1
+015f: cf 5b         xmit    CSR2,ivr
+0160: 01 1f         move    r1,driv
+0161: cf 5a         xmit    CSR1,ivr
+0162: db 66         xmit    6h,driv[6:4]
+0163: c1 4b         xmit    4bh,r1
+0164: c2 fb         xmit    0fbh,r2
+0165: c9 1a         xmit    1ah,r11
+0166: e6 87         jmp     x0687
+0167: a0 69 x0167:  nzt     aux,x0169
+0168: e1 6a         jmp     x016a
+0169: e0 a0 x0169:  jmp     x00a0
+016a: cf 3e x016a:  xmit    IO-E,ivr
+016b: db 21         xmit    1h,driv[4]
+016c: c9 1b         xmit    1bh,r11
+016d: e6 58         jmp     x0658
+016e: a0 70 x016e:  nzt     aux,x0170
+016f: e1 71         jmp     x0171
+0170: e2 32 x0170:  jmp     x0232
+0171: cf 4a x0171:  xmit    VAL2,ivr
+0172: 1c 25         move    sriv[3],r5
+0173: a5 76         nzt     r5,x0176
+0174: c9 1c         xmit    1ch,r11
+0175: e4 cc         jmp     x04cc
+0176: c9 1d x0176:  xmit    1dh,r11
+0177: e7 38         jmp     x0738
+0178: c9 1e x0178:  xmit    1eh,r11
+0179: e6 b4         jmp     x06b4
+017a: cf 4b x017a:  xmit    VAL3,ivr
+017b: 1b 60         move    sriv[6:4],aux
+017c: cf 5c         xmit    CSR3,ivr
+017d: 00 7e         move    aux,driv[3:1]
+017e: c9 1f         xmit    1fh,r11
+017f: e7 59         jmp     x0759
+0180: cf 02 x0180:  xmit    CMD_PORT,ivr
+0181: df 20         xmit    0h,driv[0]
+0182: db 21         xmit    1h,driv[4]
+0183: dc 20         xmit    0h,driv[3]
+0184: dd 21         xmit    1h,driv[2]
+0185: cf 5a         xmit    CSR1,ivr
+0186: d8 20         xmit    0h,driv[7]
+0187: c0 01         xmit    1h,aux
+0188: cf 4b         xmit    VAL3,ivr
+0189: 1f 01         move    sriv,r1
+018a: cf 4c         xmit    VAL4,ivr
+018b: 1f 02         move    sriv,r2
+018c: cf 02         xmit    CMD_PORT,ivr
+018d: da 21         xmit    1h,driv[5]
+018e: da 20         xmit    0h,driv[5]
+018f: cf 03         xmit    STATUS_PORT,ivr
+0190: b9 30 x0190:  nzt     sriv[6],x0190
+0191: b9 33 x0191:  nzt     sriv[6],x0193
+0192: e1 91         jmp     x0191
+0193: cf 3f x0193:  xmit    IO-F,ivr
+0194: 1f 03         move    sriv,r3
+0195: cf 02         xmit    CMD_PORT,ivr
+0196: da 21         xmit    1h,driv[5]
+0197: da 20         xmit    0h,driv[5]
+0198: cf 4f         xmit    VAL7,ivr
+0199: 1f 04         move    sriv,r4
+019a: a5 9c         nzt     r5,x019c
+019b: e2 34         jmp     x0234
+019c: c9 e0 x019c:  xmit    0e0h,r11
+019d: c6 ea         xmit    0eah,r6
+019e: cf 51         xmit    VAL9,ivr
+019f: 05 1f         move    r5,driv
+01a0: cf 5d x01a0:  xmit    CSR4,ivr
+01a1: b9 23         nzt     sriv[6],x01a3
+01a2: e1 a0         jmp     x01a0
+01a3: cf 5d x01a3:  xmit    CSR4,ivr
+01a4: b9 23         nzt     sriv[6],x01a3
+01a5: cf 03         xmit    STATUS_PORT,ivr
+01a6: bc 26 x01a6:  nzt     sriv[3],x01a6
+01a7: cf 03 x01a7:  xmit    STATUS_PORT,ivr
+01a8: bc 28 x01a8:  nzt     sriv[3],x01a8
+01a9: 26 06         add     r6,r6
+01aa: a6 a7         nzt     r6,x01a7
+01ab: cf 03         xmit    STATUS_PORT,ivr
+01ac: bc 2c x01ac:  nzt     sriv[3],x01ac
+01ad: c6 eb         xmit    0ebh,r6
+01ae: cf 03         xmit    STATUS_PORT,ivr
+01af: bc 2f x01af:  nzt     sriv[3],x01af
+01b0: cf 01         xmit    DATA_PORT,ivr
+01b1: c5 a1         xmit    0a1h,r5
+01b2: 05 1f         move    r5,driv
+01b3: cf 03         xmit    STATUS_PORT,ivr
+01b4: bc 34 x01b4:  nzt     sriv[3],x01b4
+01b5: cf 02         xmit    CMD_PORT,ivr
+01b6: db 20         xmit    0h,driv[4]
+01b7: cf 03         xmit    STATUS_PORT,ivr
+01b8: bc 38 x01b8:  nzt     sriv[3],x01b8
+01b9: cf 01         xmit    DATA_PORT,ivr
+01ba: c5 fe         xmit    0feh,r5
+01bb: 05 1f         move    r5,driv
+01bc: cf 03         xmit    STATUS_PORT,ivr
+01bd: bc 3d x01bd:  nzt     sriv[3],x01bd
+01be: cf 01         xmit    DATA_PORT,ivr
+01bf: 01 1f         move    r1,driv
+01c0: cf 03         xmit    STATUS_PORT,ivr
+01c1: bc 21 x01c1:  nzt     sriv[3],x01c1
+01c2: cf 01         xmit    DATA_PORT,ivr
+01c3: 02 1f         move    r2,driv
+01c4: cf 03         xmit    STATUS_PORT,ivr
+01c5: bc 25 x01c5:  nzt     sriv[3],x01c5
+01c6: cf 01         xmit    DATA_PORT,ivr
+01c7: 03 1f         move    r3,driv
+01c8: cf 03         xmit    STATUS_PORT,ivr
+01c9: bc 29 x01c9:  nzt     sriv[3],x01c9
+01ca: cf 02         xmit    CMD_PORT,ivr
+01cb: dc 21         xmit    1h,driv[3]
+01cc: cf 03         xmit    STATUS_PORT,ivr
+01cd: bc 2d x01cd:  nzt     sriv[3],x01cd
+01ce: cf 01         xmit    DATA_PORT,ivr
+01cf: c5 00         xmit    0h,r5
+01d0: 05 1f         move    r5,driv
+01d1: cf 03         xmit    STATUS_PORT,ivr
+01d2: bc 32 x01d2:  nzt     sriv[3],x01d2
+01d3: cf 02         xmit    CMD_PORT,ivr
+01d4: dc 20         xmit    0h,driv[3]
+01d5: cf 03 x01d5:  xmit    STATUS_PORT,ivr
+01d6: bc 36 x01d6:  nzt     sriv[3],x01d6
+01d7: 26 06         add     r6,r6
+01d8: a6 d5         nzt     r6,x01d5
+01d9: cf 03         xmit    STATUS_PORT,ivr
+01da: bc 3a x01da:  nzt     sriv[3],x01da
+01db: c6 00         xmit    0h,r6
+01dc: cf 03         xmit    STATUS_PORT,ivr
+01dd: bc 3d x01dd:  nzt     sriv[3],x01dd
+01de: cf 02         xmit    CMD_PORT,ivr
+01df: db 21         xmit    1h,driv[4]
+01e0: cf 03         xmit    STATUS_PORT,ivr
+01e1: bc 21 x01e1:  nzt     sriv[3],x01e1
+01e2: cf 01         xmit    DATA_PORT,ivr
+01e3: c5 a1         xmit    0a1h,r5
+01e4: 05 1f         move    r5,driv
+01e5: cf 03         xmit    STATUS_PORT,ivr
+01e6: bc 26 x01e6:  nzt     sriv[3],x01e6
+01e7: cf 02         xmit    CMD_PORT,ivr
+01e8: db 20         xmit    0h,driv[4]
+01e9: cf 03         xmit    STATUS_PORT,ivr
+01ea: bc 2a x01ea:  nzt     sriv[3],x01ea
+01eb: cf 01         xmit    DATA_PORT,ivr
+01ec: c5 f8         xmit    0f8h,r5
+01ed: 05 1f         move    r5,driv
+01ee: cf 03         xmit    STATUS_PORT,ivr
+01ef: bc 2f x01ef:  nzt     sriv[3],x01ef
+01f0: cf 01         xmit    DATA_PORT,ivr
+01f1: 04 1f         move    r4,driv
+01f2: cf 03 x01f2:  xmit    STATUS_PORT,ivr
+01f3: bc 33 x01f3:  nzt     sriv[3],x01f3
+01f4: 26 06         add     r6,r6
+01f5: a6 f2         nzt     r6,x01f2
+01f6: cf 02         xmit    CMD_PORT,ivr
+01f7: dc 21         xmit    1h,driv[3]
+01f8: cf 03         xmit    STATUS_PORT,ivr
+01f9: bc 39 x01f9:  nzt     sriv[3],x01f9
+01fa: c6 ea         xmit    0eah,r6
+01fb: cf 03         xmit    STATUS_PORT,ivr
+01fc: bc 3c x01fc:  nzt     sriv[3],x01fc
+01fd: cf 03         xmit    STATUS_PORT,ivr
+01fe: bc 3e x01fe:  nzt     sriv[3],x01fe
+01ff: cf 02         xmit    CMD_PORT,ivr
+0200: dc 20         xmit    0h,driv[3]
+0201: db 21         xmit    1h,driv[4]
+0202: 29 09         add     r11,r11
+0203: a9 05         nzt     r11,x0205
+0204: e2 0f         jmp     x020f
+0205: cf 3f x0205:  xmit    IO-F,ivr
+0206: 1f 03         move    sriv,r3
+0207: 29 00         add     r11,aux
+0208: e7 99         jmp     x0799
+0209: c0 01 x0209:  xmit    1h,aux
+020a: e1 a7         jmp     x01a7
+020b: cf 02 x020b:  xmit    CMD_PORT,ivr
+020c: da 21         xmit    1h,driv[5]
+020d: da 20         xmit    0h,driv[5]
+020e: e2 09         jmp     x0209
+020f: c0 51 x020f:  xmit    51h,aux
+0210: 00 0f         move    aux,ivr
+0211: 1f 05         move    sriv,r5
+0212: cf 03         xmit    STATUS_PORT,ivr
+0213: bc 33 x0213:  nzt     sriv[3],x0213
+0214: cf 03         xmit    STATUS_PORT,ivr
+0215: bc 35 x0215:  nzt     sriv[3],x0215
+0216: c4 00 x0216:  xmit    0h,r4
+0217: cf 5a         xmit    CSR1,ivr
+0218: d8 21         xmit    1h,driv[7]
+0219: cf 02         xmit    CMD_PORT,ivr
+021a: dd 20         xmit    0h,driv[2]
+021b: cf 4a         xmit    VAL2,ivr
+021c: 1c 25         move    sriv[3],r5
+021d: a5 1f         nzt     r5,x021f
+021e: e2 21         jmp     x0221
+021f: c9 20 x021f:  xmit    20h,r11
+0220: e7 24         jmp     x0724
+0221: c0 33 x0221:  xmit    33h,aux
+0222: 25 0f         add     r5,ivr
+0223: 04 00         move    r4,aux
+0224: 25 1f         add     r5,driv
+0225: cf 3e         xmit    IO-E,ivr
+0226: da 21         xmit    1h,driv[5]
+0227: cf 02         xmit    CMD_PORT,ivr
+0228: d9 21         xmit    1h,driv[6]
+0229: 04 00         move    r4,aux
+022a: 25 00         add     r5,aux
+022b: c9 21         xmit    21h,r11
+022c: e7 1c         jmp     x071c
+022d: cf 3e x022d:  xmit    IO-E,ivr
+022e: db 20         xmit    0h,driv[4]
+022f: c9 22         xmit    22h,r11
+0230: e7 2c         jmp     x072c
+0231: e0 1f x0231:  jmp     x001f
+0232: c4 48 x0232:  xmit    48h,r4
+0233: e2 21         jmp     x0221
+0234: c9 f0 x0234:  xmit    0f0h,r11
+0235: cf 5d x0235:  xmit    CSR4,ivr
+0236: b9 38         nzt     sriv[6],x0238
+0237: e2 35         jmp     x0235
+0238: cf 5d x0238:  xmit    CSR4,ivr
+0239: b9 38         nzt     sriv[6],x0238
+023a: cf 5a         xmit    CSR1,ivr
+023b: db 66         xmit    6h,driv[6:4]
+023c: c6 b0         xmit    0b0h,r6
+023d: cf 5f x023d:  xmit    FDC_DATA,ivr
+023e: c0 4e         xmit    4eh,aux
+023f: 00 1f         move    aux,driv
+0240: cf 5a x0240:  xmit    CSR1,ivr
+0241: be 20         nzt     sriv[1],x0240
+0242: c0 01         xmit    1h,aux
+0243: 26 06         add     r6,r6
+0244: a6 3d         nzt     r6,x023d
+0245: c6 f4         xmit    0f4h,r6
+0246: c0 00 x0246:  xmit    0h,aux
+0247: cf 5f         xmit    FDC_DATA,ivr
+0248: 00 1f         move    aux,driv
+0249: c0 01         xmit    1h,aux
+024a: 26 06         add     r6,r6
+024b: a6 46         nzt     r6,x0246
+024c: cf 5a         xmit    CSR1,ivr
+024d: db 65         xmit    5h,driv[6:4]
+024e: c6 fd         xmit    0fdh,r6
+024f: cf 5f x024f:  xmit    FDC_DATA,ivr
+0250: c0 52         xmit    52h,aux
+0251: 00 1f         move    aux,driv
+0252: cf 5a x0252:  xmit    CSR1,ivr
+0253: be 32         nzt     sriv[1],x0252
+0254: cf 5f         xmit    FDC_DATA,ivr
+0255: c0 24         xmit    24h,aux
+0256: 00 1f         move    aux,driv
+0257: cf 5a x0257:  xmit    CSR1,ivr
+0258: be 37         nzt     sriv[1],x0257
+0259: c0 01         xmit    1h,aux
+025a: 26 06         add     r6,r6
+025b: a6 4f         nzt     r6,x024f
+025c: cf 5a         xmit    CSR1,ivr
+025d: db 66         xmit    6h,driv[6:4]
+025e: c0 fc         xmit    0fch,aux
+025f: cf 5f         xmit    FDC_DATA,ivr
+0260: 00 1f         move    aux,driv
+0261: cf 5a x0261:  xmit    CSR1,ivr
+0262: be 21         nzt     sriv[1],x0261
+0263: c6 d0 x0263:  xmit    0d0h,r6
+0264: c0 4e x0264:  xmit    4eh,aux
+0265: cf 5f         xmit    FDC_DATA,ivr
+0266: 00 1f         move    aux,driv
+0267: cf 5a x0267:  xmit    CSR1,ivr
+0268: be 27         nzt     sriv[1],x0267
+0269: c0 01         xmit    1h,aux
+026a: 26 06         add     r6,r6
+026b: a6 64         nzt     r6,x0264
+026c: c6 f4 x026c:  xmit    0f4h,r6
+026d: c0 00 x026d:  xmit    0h,aux
+026e: cf 5f         xmit    FDC_DATA,ivr
+026f: 00 1f         move    aux,driv
+0270: cf 5f         xmit    FDC_DATA,ivr
+0271: cf 5f         xmit    FDC_DATA,ivr
+0272: cf 5a x0272:  xmit    CSR1,ivr
+0273: be 32         nzt     sriv[1],x0272
+0274: c0 01         xmit    1h,aux
+0275: 26 06         add     r6,r6
+0276: a6 6d         nzt     r6,x026d
+0277: cf 5a         xmit    CSR1,ivr
+0278: db 65         xmit    5h,driv[6:4]
+0279: c6 fd         xmit    0fdh,r6
+027a: cf 5f x027a:  xmit    FDC_DATA,ivr
+027b: c0 44         xmit    44h,aux
+027c: 00 1f         move    aux,driv
+027d: e2 80         jmp     x0280
+027e: 00 00         nop     
+027f: 00 00         nop     
+0280: cf 5f x0280:  xmit    FDC_DATA,ivr
+0281: cf 5f         xmit    FDC_DATA,ivr
+0282: cf 5a x0282:  xmit    CSR1,ivr
+0283: be 22         nzt     sriv[1],x0282
+0284: c0 89         xmit    89h,aux
+0285: cf 5f         xmit    FDC_DATA,ivr
+0286: 00 1f         move    aux,driv
+0287: cf 5f         xmit    FDC_DATA,ivr
+0288: cf 5f         xmit    FDC_DATA,ivr
+0289: cf 5a x0289:  xmit    CSR1,ivr
+028a: be 29         nzt     sriv[1],x0289
+028b: c0 01         xmit    1h,aux
+028c: 26 06         add     r6,r6
+028d: a6 7a         nzt     r6,x027a
+028e: cf 5a         xmit    CSR1,ivr
+028f: db 67         xmit    7h,driv[6:4]
+0290: cf 5f         xmit    FDC_DATA,ivr
+0291: c0 fe         xmit    0feh,aux
+0292: 00 1f         move    aux,driv
+0293: cf 5f         xmit    FDC_DATA,ivr
+0294: cf 5f         xmit    FDC_DATA,ivr
+0295: cf 5a x0295:  xmit    CSR1,ivr
+0296: be 35         nzt     sriv[1],x0295
+0297: cf 5f         xmit    FDC_DATA,ivr
+0298: 02 1f         move    r2,driv
+0299: cf 5f         xmit    FDC_DATA,ivr
+029a: cf 5f         xmit    FDC_DATA,ivr
+029b: cf 5a x029b:  xmit    CSR1,ivr
+029c: be 3b         nzt     sriv[1],x029b
+029d: cf 4b         xmit    VAL3,ivr
+029e: 1b 20         move    sriv[4],aux
+029f: cf 5f         xmit    FDC_DATA,ivr
+02a0: 00 1f         move    aux,driv
+02a1: cf 5f         xmit    FDC_DATA,ivr
+02a2: cf 5f         xmit    FDC_DATA,ivr
+02a3: cf 5a x02a3:  xmit    CSR1,ivr
+02a4: be 23         nzt     sriv[1],x02a3
+02a5: cf 5f         xmit    FDC_DATA,ivr
+02a6: 03 1f         move    r3,driv
+02a7: cf 5f         xmit    FDC_DATA,ivr
+02a8: cf 5f         xmit    FDC_DATA,ivr
+02a9: cf 5a x02a9:  xmit    CSR1,ivr
+02aa: be 29         nzt     sriv[1],x02a9
+02ab: c0 01         xmit    1h,aux
+02ac: cf 5f         xmit    FDC_DATA,ivr
+02ad: 00 1f         move    aux,driv
+02ae: cf 5f         xmit    FDC_DATA,ivr
+02af: cf 5f         xmit    FDC_DATA,ivr
+02b0: cf 5a x02b0:  xmit    CSR1,ivr
+02b1: be 30         nzt     sriv[1],x02b0
+02b2: cf 5a         xmit    CSR1,ivr
+02b3: db 63         xmit    3h,driv[6:4]
+02b4: c6 fa         xmit    0fah,r6
+02b5: cf 5f x02b5:  xmit    FDC_DATA,ivr
+02b6: cf 5f         xmit    FDC_DATA,ivr
+02b7: cf 5a x02b7:  xmit    CSR1,ivr
+02b8: be 37         nzt     sriv[1],x02b7
+02b9: cf 5f         xmit    FDC_DATA,ivr
+02ba: c0 01         xmit    1h,aux
+02bb: 26 06         add     r6,r6
+02bc: a6 b5         nzt     r6,x02b5
+02bd: cf 5a         xmit    CSR1,ivr
+02be: db 66         xmit    6h,driv[6:4]
+02bf: c6 ea         xmit    0eah,r6
+02c0: c0 4e x02c0:  xmit    4eh,aux
+02c1: cf 5f         xmit    FDC_DATA,ivr
+02c2: 00 1f         move    aux,driv
+02c3: c0 01         xmit    1h,aux
+02c4: cf 5f         xmit    FDC_DATA,ivr
+02c5: cf 5f         xmit    FDC_DATA,ivr
+02c6: cf 5a x02c6:  xmit    CSR1,ivr
+02c7: be 26         nzt     sriv[1],x02c6
+02c8: 26 06         add     r6,r6
+02c9: a6 c0         nzt     r6,x02c0
+02ca: c6 f4         xmit    0f4h,r6
+02cb: c0 00 x02cb:  xmit    0h,aux
+02cc: cf 5f         xmit    FDC_DATA,ivr
+02cd: 00 1f         move    aux,driv
+02ce: cf 5f         xmit    FDC_DATA,ivr
+02cf: cf 5f         xmit    FDC_DATA,ivr
+02d0: cf 5a x02d0:  xmit    CSR1,ivr
+02d1: be 30         nzt     sriv[1],x02d0
+02d2: c0 01         xmit    1h,aux
+02d3: 26 06         add     r6,r6
+02d4: a6 cb         nzt     r6,x02cb
+02d5: cf 5a         xmit    CSR1,ivr
+02d6: db 65         xmit    5h,driv[6:4]
+02d7: c6 fd         xmit    0fdh,r6
+02d8: cf 5f x02d8:  xmit    FDC_DATA,ivr
+02d9: c0 44         xmit    44h,aux
+02da: 00 1f         move    aux,driv
+02db: cf 5f         xmit    FDC_DATA,ivr
+02dc: cf 5f         xmit    FDC_DATA,ivr
+02dd: cf 5a x02dd:  xmit    CSR1,ivr
+02de: be 3d         nzt     sriv[1],x02dd
+02df: c0 89         xmit    89h,aux
+02e0: cf 5f         xmit    FDC_DATA,ivr
+02e1: 00 1f         move    aux,driv
+02e2: cf 5f         xmit    FDC_DATA,ivr
+02e3: cf 5f         xmit    FDC_DATA,ivr
+02e4: cf 5a x02e4:  xmit    CSR1,ivr
+02e5: be 24         nzt     sriv[1],x02e4
+02e6: c0 01         xmit    1h,aux
+02e7: 26 06         add     r6,r6
+02e8: a6 d8         nzt     r6,x02d8
+02e9: cf 5a         xmit    CSR1,ivr
+02ea: db 67         xmit    7h,driv[6:4]
+02eb: c0 fb         xmit    0fbh,aux
+02ec: cf 5f         xmit    FDC_DATA,ivr
+02ed: 00 1f         move    aux,driv
+02ee: cf 5f         xmit    FDC_DATA,ivr
+02ef: cf 5f         xmit    FDC_DATA,ivr
+02f0: cf 5a x02f0:  xmit    CSR1,ivr
+02f1: be 30         nzt     sriv[1],x02f0
+02f2: c6 00         xmit    0h,r6
+02f3: cf 5f x02f3:  xmit    FDC_DATA,ivr
+02f4: 04 1f         move    r4,driv
+02f5: cf 5f         xmit    FDC_DATA,ivr
+02f6: cf 5f         xmit    FDC_DATA,ivr
+02f7: cf 5a x02f7:  xmit    CSR1,ivr
+02f8: be 37         nzt     sriv[1],x02f7
+02f9: c0 01         xmit    1h,aux
+02fa: 26 06         add     r6,r6
+02fb: a6 f3         nzt     r6,x02f3
+02fc: cf 5a         xmit    CSR1,ivr
+02fd: db 63         xmit    3h,driv[6:4]
+02fe: c6 fa         xmit    0fah,r6
+02ff: e3 00         jmp     x0300
+0300: cf 5f x0300:  xmit    FDC_DATA,ivr
+0301: cf 5f         xmit    FDC_DATA,ivr
+0302: cf 5a x0302:  xmit    CSR1,ivr
+0303: be 22         nzt     sriv[1],x0302
+0304: cf 5f         xmit    FDC_DATA,ivr
+0305: c0 01         xmit    1h,aux
+0306: 26 06         add     r6,r6
+0307: a6 00         nzt     r6,x0300
+0308: cf 5f         xmit    FDC_DATA,ivr
+0309: cf 5f         xmit    FDC_DATA,ivr
+030a: cf 5a x030a:  xmit    CSR1,ivr
+030b: be 2a         nzt     sriv[1],x030a
+030c: cf 5a         xmit    CSR1,ivr
+030d: db 66         xmit    6h,driv[6:4]
+030e: c0 01         xmit    1h,aux
+030f: 29 09         add     r11,r11
+0310: a9 12         nzt     r11,x0312
+0311: e3 1b         jmp     x031b
+0312: cf 3f x0312:  xmit    IO-F,ivr
+0313: 1f 03         move    sriv,r3
+0314: 29 00         add     r11,aux
+0315: a0 17         nzt     aux,x0317
+0316: e2 6c         jmp     x026c
+0317: cf 02 x0317:  xmit    CMD_PORT,ivr
+0318: da 21         xmit    1h,driv[5]
+0319: da 20         xmit    0h,driv[5]
+031a: e2 63         jmp     x0263
+031b: cf 5f x031b:  xmit    FDC_DATA,ivr
+031c: c0 00         xmit    0h,aux
+031d: 00 1f         move    aux,driv
+031e: e3 20         jmp     x0320
+031f: 00 00         nop     
+0320: cf 5f x0320:  xmit    FDC_DATA,ivr
+0321: cf 5f         xmit    FDC_DATA,ivr
+0322: cf 5a x0322:  xmit    CSR1,ivr
+0323: be 22         nzt     sriv[1],x0322
+0324: cf 5d x0324:  xmit    CSR4,ivr
+0325: b9 24         nzt     sriv[6],x0324
+0326: e2 16         jmp     x0216
+0327: c1 4b x0327:  xmit    4bh,r1
+0328: c2 fc         xmit    0fch,r2
+0329: c9 23         xmit    23h,r11
+032a: e6 87         jmp     x0687
+032b: a0 2d x032b:  nzt     aux,x032d
+032c: e3 2e         jmp     x032e
+032d: e0 a0 x032d:  jmp     x00a0
+032e: cf 02 x032e:  xmit    CMD_PORT,ivr
+032f: d9 20         xmit    0h,driv[6]
+0330: cf 3e         xmit    IO-E,ivr
+0331: db 21         xmit    1h,driv[4]
+0332: da 20         xmit    0h,driv[5]
+0333: c9 24         xmit    24h,r11
+0334: e6 58         jmp     x0658
+0335: a0 37 x0335:  nzt     aux,x0337
+0336: e3 38         jmp     x0338
+0337: e2 32 x0337:  jmp     x0232
+0338: c9 25 x0338:  xmit    25h,r11
+0339: e7 38         jmp     x0738
+033a: cf 3c x033a:  xmit    IO-C,ivr
+033b: 80 3f         xec     x033f,aux
+033c: c9 26         xmit    26h,r11
+033d: e6 b4         jmp     x06b4
+033e: e3 44 x033e:  jmp     x0344
+033f: df 61 x033f:  xmit    1h,driv[2:0]
+0340: df 67         xmit    7h,driv[2:0]
+0341: df 63         xmit    3h,driv[2:0]
+0342: df 65         xmit    5h,driv[2:0]
+0343: df 65         xmit    5h,driv[2:0]
+0344: cf 4b x0344:  xmit    VAL3,ivr
+0345: 1b 60         move    sriv[6:4],aux
+0346: cf 5c x0346:  xmit    CSR3,ivr
+0347: 00 7e         move    aux,driv[3:1]
+0348: c9 27         xmit    27h,r11
+0349: e7 59         jmp     x0759
+034a: 86 46 x034a:  xec     x0346,r6
+034b: e3 4d         jmp     x034d
+034c: e5 a2         jmp     x05a2
+034d: 85 4e x034d:  xec     x034e,r5
+034e: e3 d2 x034e:  jmp     x03d2
+034f: e3 72         jmp     x0372
+0350: 00 01 x0350:  move    aux,r1
+0351: c0 37         xmit    37h,aux
+0352: 25 0f         add     r5,ivr
+0353: 81 53 x0353:  xec     x0353,r1
+0354: 02 1f         move    r2,driv
+0355: e3 5f         jmp     x035f
+0356: c2 03         xmit    3h,r2
+0357: c2 02         xmit    2h,r2
+0358: c2 10         xmit    10h,r2
+0359: c2 08         xmit    8h,r2
+035a: c2 20         xmit    20h,r2
+035b: c2 01         xmit    1h,r2
+035c: c2 20         xmit    20h,r2
+035d: c2 80         xmit    80h,r2
+035e: c2 00         xmit    0h,r2
+035f: c0 35 x035f:  xmit    35h,aux
+0360: 25 0f         add     r5,ivr
+0361: 81 61 x0361:  xec     x0361,r1
+0362: 02 1f         move    r2,driv
+0363: e3 6d         jmp     x036d
+0364: c2 04         xmit    4h,r2
+0365: c2 04         xmit    4h,r2
+0366: c2 04         xmit    4h,r2
+0367: c2 04         xmit    4h,r2
+0368: c2 40         xmit    40h,r2
+0369: c2 04         xmit    4h,r2
+036a: c2 10         xmit    10h,r2
+036b: c2 20         xmit    20h,r2
+036c: c2 02         xmit    2h,r2
+036d: cf 02 x036d:  xmit    CMD_PORT,ivr
+036e: df 20         xmit    0h,driv[0]
+036f: de 20         xmit    0h,driv[1]
+0370: c4 40         xmit    40h,r4
+0371: e2 21         jmp     x0221
+0372: c9 28 x0372:  xmit    28h,r11
+0373: e4 dd         jmp     x04dd
+0374: c9 29 x0374:  xmit    29h,r11
+0375: e4 5e         jmp     x045e
+0376: a0 78 x0376:  nzt     aux,x0378
+0377: e3 79         jmp     x0379
+0378: e3 50 x0378:  jmp     x0350
+0379: cf 02 x0379:  xmit    CMD_PORT,ivr
+037a: db 21         xmit    1h,driv[4]
+037b: c1 f7         xmit    0f7h,r1
+037c: dd 21         xmit    1h,driv[2]
+037d: cf 01         xmit    DATA_PORT,ivr
+037e: c2 a1         xmit    0a1h,r2
+037f: 02 1f         move    r2,driv
+0380: cf 5a         xmit    CSR1,ivr
+0381: d8 20         xmit    0h,driv[7]
+0382: c0 01         xmit    1h,aux
+0383: cf 03         xmit    STATUS_PORT,ivr
+0384: bc 24 x0384:  nzt     sriv[3],x0384
+0385: cf 02         xmit    CMD_PORT,ivr
+0386: dc 20         xmit    0h,driv[3]
+0387: cf 03 x0387:  xmit    STATUS_PORT,ivr
+0388: bc 28 x0388:  nzt     sriv[3],x0388
+0389: 21 01         add     r1,r1
+038a: a1 87         nzt     r1,x0387
+038b: cf 03         xmit    STATUS_PORT,ivr
+038c: bc 2c x038c:  nzt     sriv[3],x038c
+038d: cf 02         xmit    CMD_PORT,ivr
+038e: db 20         xmit    0h,driv[4]
+038f: cf 03         xmit    STATUS_PORT,ivr
+0390: bc 30 x0390:  nzt     sriv[3],x0390
+0391: cf 01         xmit    DATA_PORT,ivr
+0392: c2 f8         xmit    0f8h,r2
+0393: 02 1f         move    r2,driv
+0394: cf 03         xmit    STATUS_PORT,ivr
+0395: bc 35 x0395:  nzt     sriv[3],x0395
+0396: cf 01         xmit    DATA_PORT,ivr
+0397: 17 1f         move    sliv,driv
+0398: c7 ff         xmit    0ffh,ivl
+0399: cf 03         xmit    STATUS_PORT,ivr
+039a: e3 a0         jmp     x03a0
+039b: 00 00         nop     
+039c: 00 00         nop     
+039d: 00 00         nop     
+039e: 00 00         nop     
+039f: 00 00         nop     
+03a0: bc 20 x03a0:  nzt     sriv[3],x03a0
+03a1: cf 01         xmit    DATA_PORT,ivr
+03a2: 17 1f         move    sliv,driv
+03a3: c7 ff         xmit    0ffh,ivl
+03a4: cf 03         xmit    STATUS_PORT,ivr
+03a5: ba 20         nzt     sriv[5],x03a0
+03a6: bc 26 x03a6:  nzt     sriv[3],x03a6
+03a7: cf 01         xmit    DATA_PORT,ivr
+03a8: 17 1f         move    sliv,driv
+03a9: cf 03         xmit    STATUS_PORT,ivr
+03aa: bc 2a x03aa:  nzt     sriv[3],x03aa
+03ab: cf 02         xmit    CMD_PORT,ivr
+03ac: dc 21         xmit    1h,driv[3]
+03ad: cf 03         xmit    STATUS_PORT,ivr
+03ae: bc 2e x03ae:  nzt     sriv[3],x03ae
+03af: cf 03         xmit    STATUS_PORT,ivr
+03b0: bc 30 x03b0:  nzt     sriv[3],x03b0
+03b1: cf 03         xmit    STATUS_PORT,ivr
+03b2: bc 32 x03b2:  nzt     sriv[3],x03b2
+03b3: e7 89         jmp     x0789
+03b4: cf 5a x03b4:  xmit    CSR1,ivr
+03b5: d8 21         xmit    1h,driv[7]
+03b6: cf 02         xmit    CMD_PORT,ivr
+03b7: dd 20         xmit    0h,driv[2]
+03b8: cf 4e x03b8:  xmit    VAL6,ivr
+03b9: c0 01         xmit    1h,aux
+03ba: 3f 1f         add     sriv,driv
+03bb: bf 1d         nzt     sriv,x03bd
+03bc: e2 16         jmp     x0216
+03bd: cf 4d x03bd:  xmit    VAL5,ivr
+03be: 3f 1f         add     sriv,driv
+03bf: c0 21         xmit    21h,aux
+03c0: 7f 00         xor     sriv,aux
+03c1: a0 c3         nzt     aux,x03c3
+03c2: e3 c4         jmp     x03c4
+03c3: e3 4a x03c3:  jmp     x034a
+03c4: df 01 x03c4:  xmit    1h,driv
+03c5: cf 3c         xmit    IO-C,ivr
+03c6: 1f 60         move    sriv[2:0],aux
+03c7: cf 4b         xmit    VAL3,ivr
+03c8: 7b 60         xor     sriv[6:4],aux
+03c9: a0 cb         nzt     aux,x03cb
+03ca: e3 ce         jmp     x03ce
+03cb: c0 01 x03cb:  xmit    1h,aux
+03cc: 3b 7b         add     sriv[6:4],driv[6:4]
+03cd: e3 44         jmp     x0344
+03ce: e6 51 x03ce:  jmp     x0651
+03cf: c0 01 x03cf:  xmit    1h,aux
+03d0: 3f 1f         add     sriv,driv
+03d1: e3 2e         jmp     x032e
+03d2: cf 5d x03d2:  xmit    CSR4,ivr
+03d3: ba 36         nzt     sriv[5],x03d6
+03d4: c0 0b         xmit    0bh,aux
+03d5: e3 50         jmp     x0350
+03d6: c9 2a x03d6:  xmit    2ah,r11
+03d7: e4 cc         jmp     x04cc
+03d8: cf 5b x03d8:  xmit    CSR2,ivr
+03d9: c0 40         xmit    40h,aux
+03da: 00 1f         move    aux,driv
+03db: c0 00         xmit    0h,aux
+03dc: cf 02         xmit    CMD_PORT,ivr
+03dd: da 21         xmit    1h,driv[5]
+03de: da 20         xmit    0h,driv[5]
+03df: cf 03         xmit    STATUS_PORT,ivr
+03e0: b9 20 x03e0:  nzt     sriv[6],x03e0
+03e1: c2 00 x03e1:  xmit    0h,r2
+03e2: c9 2b         xmit    2bh,r11
+03e3: e4 f6         jmp     x04f6
+03e4: a0 e1 x03e4:  nzt     aux,x03e1
+03e5: c9 2c         xmit    2ch,r11
+03e6: e7 6d         jmp     x076d
+03e7: cf 4c x03e7:  xmit    VAL4,ivr
+03e8: c0 d5         xmit    0d5h,aux
+03e9: 3f 00         add     sriv,aux
+03ea: cf 5b         xmit    CSR2,ivr
+03eb: d8 21         xmit    1h,driv[7]
+03ec: a8 ee         nzt     ovf,x03ee
+03ed: d8 20         xmit    0h,driv[7]
+03ee: cf 5a x03ee:  xmit    CSR1,ivr
+03ef: db 66         xmit    6h,driv[6:4]
+03f0: d8 20         xmit    0h,driv[7]
+03f1: c0 01         xmit    1h,aux
+03f2: c1 f5         xmit    0f5h,r1
+03f3: cf 5f x03f3:  xmit    FDC_DATA,ivr
+03f4: df 00         xmit    0h,driv
+03f5: cf 5f         xmit    FDC_DATA,ivr
+03f6: cf 5f         xmit    FDC_DATA,ivr
+03f7: cf 5a x03f7:  xmit    CSR1,ivr
+03f8: be 37         nzt     sriv[1],x03f7
+03f9: 21 01         add     r1,r1
+03fa: a1 f3         nzt     r1,x03f3
+03fb: cf 5a         xmit    CSR1,ivr
+03fc: db 65         xmit    5h,driv[6:4]
+03fd: c1 00         xmit    0h,r1
+03fe: c3 fd         xmit    0fdh,r3
+03ff: e4 00         jmp     x0400
+0400: cf 5f x0400:  xmit    FDC_DATA,ivr
+0401: c0 44         xmit    44h,aux
+0402: 00 1f         move    aux,driv
+0403: cf 5f         xmit    FDC_DATA,ivr
+0404: cf 5f         xmit    FDC_DATA,ivr
+0405: cf 5a x0405:  xmit    CSR1,ivr
+0406: be 25         nzt     sriv[1],x0405
+0407: cf 5f         xmit    FDC_DATA,ivr
+0408: c0 89         xmit    89h,aux
+0409: 00 1f         move    aux,driv
+040a: c0 01         xmit    1h,aux
+040b: cf 5f         xmit    FDC_DATA,ivr
+040c: cf 5f         xmit    FDC_DATA,ivr
+040d: cf 5a x040d:  xmit    CSR1,ivr
+040e: be 2d         nzt     sriv[1],x040d
+040f: 23 03         add     r3,r3
+0410: a3 00         nzt     r3,x0400
+0411: cf 5f         xmit    FDC_DATA,ivr
+0412: c3 fb         xmit    0fbh,r3
+0413: 03 1f         move    r3,driv
+0414: c1 00         xmit    0h,r1
+0415: c0 01         xmit    1h,aux
+0416: cf 5a x0416:  xmit    CSR1,ivr
+0417: db 67         xmit    7h,driv[6:4]
+0418: cf 5f         xmit    FDC_DATA,ivr
+0419: cf 5f         xmit    FDC_DATA,ivr
+041a: cf 5a x041a:  xmit    CSR1,ivr
+041b: be 3a         nzt     sriv[1],x041a
+041c: cf 03         xmit    STATUS_PORT,ivr
+041d: b9 3f         nzt     sriv[6],x041f
+041e: e4 5c         jmp     x045c
+041f: cf 3f x041f:  xmit    IO-F,ivr
+0420: 1f 03         move    sriv,r3
+0421: cf 5f         xmit    FDC_DATA,ivr
+0422: 03 1f         move    r3,driv
+0423: 21 01         add     r1,r1
+0424: a1 26         nzt     r1,x0426
+0425: e4 2a         jmp     x042a
+0426: cf 02 x0426:  xmit    CMD_PORT,ivr
+0427: da 21         xmit    1h,driv[5]
+0428: da 20         xmit    0h,driv[5]
+0429: e4 16         jmp     x0416
+042a: c1 fc x042a:  xmit    0fch,r1
+042b: cf 5f         xmit    FDC_DATA,ivr
+042c: cf 5f         xmit    FDC_DATA,ivr
+042d: cf 5a x042d:  xmit    CSR1,ivr
+042e: be 2d         nzt     sriv[1],x042d
+042f: cf 5a         xmit    CSR1,ivr
+0430: d9 20         xmit    0h,driv[6]
+0431: cf 5f x0431:  xmit    FDC_DATA,ivr
+0432: cf 5f         xmit    FDC_DATA,ivr
+0433: cf 5a x0433:  xmit    CSR1,ivr
+0434: be 33         nzt     sriv[1],x0433
+0435: cf 5f         xmit    FDC_DATA,ivr
+0436: c0 01         xmit    1h,aux
+0437: 21 01         add     r1,r1
+0438: a1 31         nzt     r1,x0431
+0439: cf 5f         xmit    FDC_DATA,ivr
+043a: c0 00         xmit    0h,aux
+043b: 00 1f         move    aux,driv
+043c: e4 40         jmp     x0440
+043d: 00 00         nop     
+043e: 00 00         nop     
+043f: 00 00         nop     
+0440: cf 5f x0440:  xmit    FDC_DATA,ivr
+0441: cf 5f         xmit    FDC_DATA,ivr
+0442: cf 5a x0442:  xmit    CSR1,ivr
+0443: be 22         nzt     sriv[1],x0442
+0444: cf 5f         xmit    FDC_DATA,ivr
+0445: cf 5f         xmit    FDC_DATA,ivr
+0446: cf 5f         xmit    FDC_DATA,ivr
+0447: cf 5a x0447:  xmit    CSR1,ivr
+0448: be 27         nzt     sriv[1],x0447
+0449: cf 5a         xmit    CSR1,ivr
+044a: d8 21         xmit    1h,driv[7]
+044b: cf 5b x044b:  xmit    CSR2,ivr
+044c: d9 21         xmit    1h,driv[6]
+044d: cf 4e         xmit    VAL6,ivr
+044e: c0 01         xmit    1h,aux
+044f: 3f 1f         add     sriv,driv
+0450: bf 13         nzt     sriv,x0453
+0451: c4 00         xmit    0h,r4
+0452: e2 21         jmp     x0221
+0453: cf 4d x0453:  xmit    VAL5,ivr
+0454: 3f 1f         add     sriv,driv
+0455: c0 11         xmit    11h,aux
+0456: 7f 00         xor     sriv,aux
+0457: a0 5b         nzt     aux,x045b
+0458: df 01         xmit    1h,driv
+0459: e3 ce         jmp     x03ce
+045a: 01 01         move    r1,r1
+045b: e3 4a x045b:  jmp     x034a
+045c: c0 0a x045c:  xmit    0ah,aux
+045d: e3 50         jmp     x0350
+045e: c1 a1 x045e:  xmit    0a1h,r1
+045f: c2 fe         xmit    0feh,r2
+0460: cf 4b         xmit    VAL3,ivr
+0461: 1f 03         move    sriv,r3
+0462: cf 4c         xmit    VAL4,ivr
+0463: 1f 04         move    sriv,r4
+0464: cf 50         xmit    VAL8,ivr
+0465: df 10         xmit    10h,driv
+0466: cf 51         xmit    VAL9,ivr
+0467: 06 1f         move    r6,driv
+0468: cf 4d         xmit    VAL5,ivr
+0469: 1f 05         move    sriv,r5
+046a: c0 01 x046a:  xmit    1h,aux
+046b: cf 02 x046b:  xmit    CMD_PORT,ivr
+046c: c6 94         xmit    94h,r6
+046d: 06 1f         move    r6,driv
+046e: c6 fa         xmit    0fah,r6
+046f: c0 01         xmit    1h,aux
+0470: 26 06 x0470:  add     r6,r6
+0471: a6 70         nzt     r6,x0470
+0472: df 21         xmit    1h,driv[0]
+0473: 00 00         nop     
+0474: 00 00         nop     
+0475: dd 20         xmit    0h,driv[2]
+0476: cf 03         xmit    STATUS_PORT,ivr
+0477: be 39 x0477:  nzt     sriv[1],x0479
+0478: e4 77         jmp     x0477
+0479: c6 f8 x0479:  xmit    0f8h,r6
+047a: c0 01 x047a:  xmit    1h,aux
+047b: 26 06         add     r6,r6
+047c: a6 7e         nzt     r6,x047e
+047d: e4 80         jmp     x0480
+047e: bf 2b x047e:  nzt     sriv[0],x046b
+047f: e4 7a         jmp     x047a
+0480: cf 02 x0480:  xmit    CMD_PORT,ivr
+0481: db 20         xmit    0h,driv[4]
+0482: de 21         xmit    1h,driv[1]
+0483: cf 03         xmit    STATUS_PORT,ivr
+0484: bd 27 x0484:  nzt     sriv[2],x0487
+0485: be 24         nzt     sriv[1],x0484
+0486: e4 6b         jmp     x046b
+0487: cf 03 x0487:  xmit    STATUS_PORT,ivr
+0488: bc 28 x0488:  nzt     sriv[3],x0488
+0489: 02 00         move    r2,aux
+048a: cf 03         xmit    STATUS_PORT,ivr
+048b: bc 2b x048b:  nzt     sriv[3],x048b
+048c: cf 01         xmit    DATA_PORT,ivr
+048d: 7f 00         xor     sriv,aux
+048e: cf 03         xmit    STATUS_PORT,ivr
+048f: a0 cb         nzt     aux,x04cb
+0490: 03 00         move    r3,aux
+0491: bc 31 x0491:  nzt     sriv[3],x0491
+0492: cf 01         xmit    DATA_PORT,ivr
+0493: 7f 00         xor     sriv,aux
+0494: cf 03         xmit    STATUS_PORT,ivr
+0495: a0 bb         nzt     aux,x04bb
+0496: 04 00         move    r4,aux
+0497: bc 37 x0497:  nzt     sriv[3],x0497
+0498: cf 01         xmit    DATA_PORT,ivr
+0499: 7f 00         xor     sriv,aux
+049a: cf 03         xmit    STATUS_PORT,ivr
+049b: a0 bd         nzt     aux,x04bd
+049c: 04 00         move    r4,aux
+049d: bc 3d x049d:  nzt     sriv[3],x049d
+049e: cf 01         xmit    DATA_PORT,ivr
+049f: 1f 01         move    sriv,r1
+04a0: cf 03         xmit    STATUS_PORT,ivr
+04a1: bc 21 x04a1:  nzt     sriv[3],x04a1
+04a2: e7 79         jmp     x0779
+04a3: cf 01 x04a3:  xmit    DATA_PORT,ivr
+04a4: bf 06         nzt     sriv,x04a6
+04a5: e4 a7         jmp     x04a7
+04a6: e4 bf x04a6:  jmp     x04bf
+04a7: cf 03 x04a7:  xmit    STATUS_PORT,ivr
+04a8: bc 28 x04a8:  nzt     sriv[3],x04a8
+04a9: cf 01         xmit    DATA_PORT,ivr
+04aa: bf 06         nzt     sriv,x04a6
+04ab: e4 ad         jmp     x04ad
+04ac: e4 bf         jmp     x04bf
+04ad: 01 00 x04ad:  move    r1,aux
+04ae: 65 00         xor     r5,aux
+04af: a0 b9         nzt     aux,x04b9
+04b0: c0 00         xmit    0h,aux
+04b1: cf 02 x04b1:  xmit    CMD_PORT,ivr
+04b2: df 20         xmit    0h,driv[0]
+04b3: de 20         xmit    0h,driv[1]
+04b4: cf 51         xmit    VAL9,ivr
+04b5: 1f 06         move    sriv,r6
+04b6: cf 4a         xmit    VAL2,ivr
+04b7: 1c 25         move    sriv[3],r5
+04b8: e7 c0         jmp     x07c0
+04b9: c0 01 x04b9:  xmit    1h,aux
+04ba: e4 c5         jmp     x04c5
+04bb: c0 05 x04bb:  xmit    5h,aux
+04bc: e4 c5         jmp     x04c5
+04bd: c0 06 x04bd:  xmit    6h,aux
+04be: e4 c5         jmp     x04c5
+04bf: 01 00 x04bf:  move    r1,aux
+04c0: 65 00         xor     r5,aux
+04c1: a0 c4         nzt     aux,x04c4
+04c2: c0 07         xmit    7h,aux
+04c3: e4 b1         jmp     x04b1
+04c4: e4 b9 x04c4:  jmp     x04b9
+04c5: cf 50 x04c5:  xmit    VAL8,ivr
+04c6: 3f 1f         add     sriv,driv
+04c7: cf 50         xmit    VAL8,ivr
+04c8: bf 0b         nzt     sriv,x04cb
+04c9: c0 04         xmit    4h,aux
+04ca: e4 b1         jmp     x04b1
+04cb: e4 6a x04cb:  jmp     x046a
+04cc: cf 4a x04cc:  xmit    VAL2,ivr
+04cd: 9a 2e         xec     x04ce,sriv[5]
+04ce: e4 d0 x04ce:  jmp     x04d0
+04cf: e7 c0         jmp     x07c0
+04d0: cf 4a x04d0:  xmit    VAL2,ivr
+04d1: da 21         xmit    1h,driv[5]
+04d2: c0 01         xmit    1h,aux
+04d3: c1 00         xmit    0h,r1
+04d4: c2 00         xmit    0h,r2
+04d5: c3 ef         xmit    0efh,r3
+04d6: 21 01 x04d6:  add     r1,r1
+04d7: a1 d6         nzt     r1,x04d6
+04d8: 22 02         add     r2,r2
+04d9: a2 d6         nzt     r2,x04d6
+04da: 23 03         add     r3,r3
+04db: a3 d6         nzt     r3,x04d6
+04dc: e7 c0         jmp     x07c0
+04dd: cf 02 x04dd:  xmit    CMD_PORT,ivr
+04de: db 21         xmit    1h,driv[4]
+04df: db 20         xmit    0h,driv[4]
+04e0: c1 00         xmit    0h,r1
+04e1: c0 01         xmit    1h,aux
+04e2: cf 3f x04e2:  xmit    IO-F,ivr
+04e3: 86 eb         xec     x04eb,r6
+04e4: cf 02         xmit    CMD_PORT,ivr
+04e5: da 21         xmit    1h,driv[5]
+04e6: da 20         xmit    0h,driv[5]
+04e7: cf 03         xmit    STATUS_PORT,ivr
+04e8: b9 28 x04e8:  nzt     sriv[6],x04e8
+04e9: b9 2b x04e9:  nzt     sriv[6],x04eb
+04ea: e4 e9         jmp     x04e9
+04eb: cf 3f x04eb:  xmit    IO-F,ivr
+04ec: 86 ed         xec     x04ed,r6
+04ed: 21 01 x04ed:  add     r1,r1
+04ee: a1 f4         nzt     r1,x04f4
+04ef: e7 c0         jmp     x07c0
+04f0: 01 01         move    r1,r1
+04f1: 17 1f         move    sliv,driv
+04f2: 1f 17         move    sriv,dliv
+04f3: 01 01         move    r1,r1
+04f4: c7 ff x04f4:  xmit    0ffh,ivl
+04f5: e4 e2         jmp     x04e2
+04f6: cf 50 x04f6:  xmit    VAL8,ivr
+04f7: c0 80         xmit    80h,aux
+04f8: 00 1f         move    aux,driv
+04f9: cf 5b x04f9:  xmit    CSR2,ivr
+04fa: c1 40         xmit    40h,r1
+04fb: 01 1f         move    r1,driv
+04fc: c0 01         xmit    1h,aux
+04fd: 21 01 x04fd:  add     r1,r1
+04fe: a1 fd         nzt     r1,x04fd
+04ff: cf 5b         xmit    CSR2,ivr
+0500: d9 20         xmit    0h,driv[6]
+0501: c1 fd x0501:  xmit    0fdh,r1
+0502: e7 5e         jmp     x075e
+0503: cf 5a x0503:  xmit    CSR1,ivr
+0504: db 66         xmit    6h,driv[6:4]
+0505: cf 5f         xmit    FDC_DATA,ivr
+0506: cf 5f         xmit    FDC_DATA,ivr
+0507: cf 5a x0507:  xmit    CSR1,ivr
+0508: be 27         nzt     sriv[1],x0507
+0509: cf 5f         xmit    FDC_DATA,ivr
+050a: bf 0c         nzt     sriv,x050c
+050b: e5 0d         jmp     x050d
+050c: e5 01 x050c:  jmp     x0501
+050d: 21 01 x050d:  add     r1,r1
+050e: a1 10         nzt     r1,x0510
+050f: e5 11         jmp     x0511
+0510: e5 03 x0510:  jmp     x0503
+0511: cf 5a x0511:  xmit    CSR1,ivr
+0512: db 65         xmit    5h,driv[6:4]
+0513: cf 5f         xmit    FDC_DATA,ivr
+0514: cf 5f         xmit    FDC_DATA,ivr
+0515: cf 5a x0515:  xmit    CSR1,ivr
+0516: be 35         nzt     sriv[1],x0515
+0517: cf 5a         xmit    CSR1,ivr
+0518: db 67         xmit    7h,driv[6:4]
+0519: c0 44         xmit    44h,aux
+051a: cf 5f         xmit    FDC_DATA,ivr
+051b: 7f 00         xor     sriv,aux
+051c: a0 1e         nzt     aux,x051e
+051d: e5 1f         jmp     x051f
+051e: e4 f9 x051e:  jmp     x04f9
+051f: e5 20 x051f:  jmp     x0520
+0520: cf 5f x0520:  xmit    FDC_DATA,ivr
+0521: cf 5f         xmit    FDC_DATA,ivr
+0522: cf 5a x0522:  xmit    CSR1,ivr
+0523: be 22         nzt     sriv[1],x0522
+0524: c0 89         xmit    89h,aux
+0525: cf 5f         xmit    FDC_DATA,ivr
+0526: 7f 00         xor     sriv,aux
+0527: a0 31         nzt     aux,x0531
+0528: cf 5f         xmit    FDC_DATA,ivr
+0529: cf 5f         xmit    FDC_DATA,ivr
+052a: cf 5a x052a:  xmit    CSR1,ivr
+052b: be 2a         nzt     sriv[1],x052a
+052c: c0 a1         xmit    0a1h,aux
+052d: cf 5f         xmit    FDC_DATA,ivr
+052e: 7f 01         xor     sriv,r1
+052f: a1 31         nzt     r1,x0531
+0530: e5 32         jmp     x0532
+0531: e4 f9 x0531:  jmp     x04f9
+0532: cf 5f x0532:  xmit    FDC_DATA,ivr
+0533: cf 5f         xmit    FDC_DATA,ivr
+0534: cf 5a x0534:  xmit    CSR1,ivr
+0535: be 34         nzt     sriv[1],x0534
+0536: cf 5f         xmit    FDC_DATA,ivr
+0537: 7f 01         xor     sriv,r1
+0538: a1 3a         nzt     r1,x053a
+0539: e5 3b         jmp     x053b
+053a: e4 f9 x053a:  jmp     x04f9
+053b: cf 5f x053b:  xmit    FDC_DATA,ivr
+053c: cf 5f         xmit    FDC_DATA,ivr
+053d: cf 5a x053d:  xmit    CSR1,ivr
+053e: be 3d         nzt     sriv[1],x053d
+053f: 82 41         xec     x0541,r2
+0540: e5 43         jmp     x0543
+0541: c0 fe x0541:  xmit    0feh,aux
+0542: c0 fb         xmit    0fbh,aux
+0543: cf 5f x0543:  xmit    FDC_DATA,ivr
+0544: 7f 01         xor     sriv,r1
+0545: c0 00         xmit    0h,aux
+0546: a1 48         nzt     r1,x0548
+0547: e5 4c         jmp     x054c
+0548: a2 4a x0548:  nzt     r2,x054a
+0549: e7 49         jmp     x0749
+054a: c0 01 x054a:  xmit    1h,aux
+054b: e7 c0         jmp     x07c0
+054c: a2 4e x054c:  nzt     r2,x054e
+054d: e5 4f         jmp     x054f
+054e: e7 c0 x054e:  jmp     x07c0
+054f: cf 5f x054f:  xmit    FDC_DATA,ivr
+0550: cf 5f         xmit    FDC_DATA,ivr
+0551: cf 5a x0551:  xmit    CSR1,ivr
+0552: be 31         nzt     sriv[1],x0551
+0553: cf 4c         xmit    VAL4,ivr
+0554: 1f 00         move    sriv,aux
+0555: cf 5f         xmit    FDC_DATA,ivr
+0556: 7f 00         xor     sriv,aux
+0557: a0 59         nzt     aux,x0559
+0558: e5 5b         jmp     x055b
+0559: c0 06 x0559:  xmit    6h,aux
+055a: e3 50         jmp     x0350
+055b: cf 5f x055b:  xmit    FDC_DATA,ivr
+055c: cf 5f         xmit    FDC_DATA,ivr
+055d: cf 5a x055d:  xmit    CSR1,ivr
+055e: be 3d         nzt     sriv[1],x055d
+055f: cf 4b         xmit    VAL3,ivr
+0560: 1b 60         move    sriv[6:4],aux
+0561: cf 5f         xmit    FDC_DATA,ivr
+0562: 7f 00         xor     sriv,aux
+0563: a0 65         nzt     aux,x0565
+0564: e5 67         jmp     x0567
+0565: c0 05 x0565:  xmit    5h,aux
+0566: e3 50         jmp     x0350
+0567: cf 5f x0567:  xmit    FDC_DATA,ivr
+0568: cf 5f         xmit    FDC_DATA,ivr
+0569: cf 5a x0569:  xmit    CSR1,ivr
+056a: be 29         nzt     sriv[1],x0569
+056b: cf 4d         xmit    VAL5,ivr
+056c: 1f 00         move    sriv,aux
+056d: cf 5f         xmit    FDC_DATA,ivr
+056e: 7f 00         xor     sriv,aux
+056f: a0 71         nzt     aux,x0571
+0570: e5 72         jmp     x0572
+0571: e7 49 x0571:  jmp     x0749
+0572: cf 5f x0572:  xmit    FDC_DATA,ivr
+0573: cf 5f         xmit    FDC_DATA,ivr
+0574: cf 5a x0574:  xmit    CSR1,ivr
+0575: be 34         nzt     sriv[1],x0574
+0576: c0 01         xmit    1h,aux
+0577: cf 5f         xmit    FDC_DATA,ivr
+0578: 7f 00         xor     sriv,aux
+0579: a0 7b         nzt     aux,x057b
+057a: e5 7d         jmp     x057d
+057b: c0 03 x057b:  xmit    3h,aux
+057c: e3 50         jmp     x0350
+057d: e5 80 x057d:  jmp     x0580
+057e: 00 00         nop     
+057f: 00 00         nop     
+0580: cf 5f x0580:  xmit    FDC_DATA,ivr
+0581: cf 5f         xmit    FDC_DATA,ivr
+0582: cf 5a x0582:  xmit    CSR1,ivr
+0583: be 22         nzt     sriv[1],x0582
+0584: cf 5f         xmit    FDC_DATA,ivr
+0585: cf 5a         xmit    CSR1,ivr
+0586: d9 20         xmit    0h,driv[6]
+0587: cf 5f         xmit    FDC_DATA,ivr
+0588: cf 5f         xmit    FDC_DATA,ivr
+0589: cf 5a x0589:  xmit    CSR1,ivr
+058a: be 29         nzt     sriv[1],x0589
+058b: cf 5f         xmit    FDC_DATA,ivr
+058c: cf 5f         xmit    FDC_DATA,ivr
+058d: cf 5f         xmit    FDC_DATA,ivr
+058e: cf 5a x058e:  xmit    CSR1,ivr
+058f: be 2e         nzt     sriv[1],x058e
+0590: cf 5f         xmit    FDC_DATA,ivr
+0591: bf 13         nzt     sriv,x0593
+0592: e5 94         jmp     x0594
+0593: e5 9e x0593:  jmp     x059e
+0594: cf 5f x0594:  xmit    FDC_DATA,ivr
+0595: cf 5f         xmit    FDC_DATA,ivr
+0596: cf 5a x0596:  xmit    CSR1,ivr
+0597: be 36         nzt     sriv[1],x0596
+0598: cf 5f         xmit    FDC_DATA,ivr
+0599: bf 1e         nzt     sriv,x059e
+059a: cf 5b         xmit    CSR2,ivr
+059b: d9 21         xmit    1h,driv[6]
+059c: c0 00         xmit    0h,aux
+059d: e7 c0         jmp     x07c0
+059e: c0 07 x059e:  xmit    7h,aux
+059f: cf 5b         xmit    CSR2,ivr
+05a0: d9 21         xmit    1h,driv[6]
+05a1: e4 b1         jmp     x04b1
+05a2: 85 a3 x05a2:  xec     x05a3,r5
+05a3: e6 00 x05a3:  jmp     x0600
+05a4: e5 a5         jmp     x05a5
+05a5: c9 2d x05a5:  xmit    2dh,r11
+05a6: e4 5e         jmp     x045e
+05a7: a0 a9 x05a7:  nzt     aux,x05a9
+05a8: e5 aa         jmp     x05aa
+05a9: e3 50 x05a9:  jmp     x0350
+05aa: c1 a1 x05aa:  xmit    0a1h,r1
+05ab: c2 fa         xmit    0fah,r2
+05ac: c0 01         xmit    1h,aux
+05ad: cf 02         xmit    CMD_PORT,ivr
+05ae: c3 94         xmit    94h,r3
+05af: 03 1f         move    r3,driv
+05b0: 22 02 x05b0:  add     r2,r2
+05b1: a2 b0         nzt     r2,x05b0
+05b2: df 21         xmit    1h,driv[0]
+05b3: 00 00         nop     
+05b4: 00 00         nop     
+05b5: dd 20         xmit    0h,driv[2]
+05b6: cf 03         xmit    STATUS_PORT,ivr
+05b7: be 39 x05b7:  nzt     sriv[1],x05b9
+05b8: e5 b7         jmp     x05b7
+05b9: c3 f7 x05b9:  xmit    0f7h,r3
+05ba: 23 03 x05ba:  add     r3,r3
+05bb: a3 c0         nzt     r3,x05c0
+05bc: e5 c3         jmp     x05c3
+05bd: e5 c0         jmp     x05c0
+05be: 00 00         nop     
+05bf: 00 00         nop     
+05c0: bf 22 x05c0:  nzt     sriv[0],x05c2
+05c1: e5 ba         jmp     x05ba
+05c2: e5 a5 x05c2:  jmp     x05a5
+05c3: cf 02 x05c3:  xmit    CMD_PORT,ivr
+05c4: c0 83         xmit    83h,aux
+05c5: 00 1f         move    aux,driv
+05c6: cf 03         xmit    STATUS_PORT,ivr
+05c7: bd 2a x05c7:  nzt     sriv[2],x05ca
+05c8: be 27         nzt     sriv[1],x05c7
+05c9: e3 50         jmp     x0350
+05ca: cf 03 x05ca:  xmit    STATUS_PORT,ivr
+05cb: bc 2b x05cb:  nzt     sriv[3],x05cb
+05cc: c0 08         xmit    8h,aux
+05cd: cf 03         xmit    STATUS_PORT,ivr
+05ce: bc 2e x05ce:  nzt     sriv[3],x05ce
+05cf: cf 01         xmit    DATA_PORT,ivr
+05d0: 7f 80         xor     sriv[3:0],aux
+05d1: cf 03         xmit    STATUS_PORT,ivr
+05d2: a0 d9         nzt     aux,x05d9
+05d3: bc 33 x05d3:  nzt     sriv[3],x05d3
+05d4: cf 01         xmit    DATA_PORT,ivr
+05d5: 1f 17         move    sriv,dliv
+05d6: c7 ff         xmit    0ffh,ivl
+05d7: cf 03         xmit    STATUS_PORT,ivr
+05d8: e5 e0         jmp     x05e0
+05d9: c0 08 x05d9:  xmit    8h,aux
+05da: e5 a5         jmp     x05a5
+05db: e5 e0         jmp     x05e0
+05dc: 00 00         nop     
+05dd: 00 00         nop     
+05de: 00 00         nop     
+05df: 00 00         nop     
+05e0: bc 20 x05e0:  nzt     sriv[3],x05e0
+05e1: cf 01         xmit    DATA_PORT,ivr
+05e2: 1f 17         move    sriv,dliv
+05e3: c7 ff         xmit    0ffh,ivl
+05e4: cf 03         xmit    STATUS_PORT,ivr
+05e5: ba 20         nzt     sriv[5],x05e0
+05e6: bc 26 x05e6:  nzt     sriv[3],x05e6
+05e7: cf 01         xmit    DATA_PORT,ivr
+05e8: 1f 17         move    sriv,dliv
+05e9: cf 03         xmit    STATUS_PORT,ivr
+05ea: bc 2a x05ea:  nzt     sriv[3],x05ea
+05eb: e7 80         jmp     x0780
+05ec: cf 01 x05ec:  xmit    DATA_PORT,ivr
+05ed: bf 18         nzt     sriv,x05f8
+05ee: cf 03         xmit    STATUS_PORT,ivr
+05ef: bc 2f x05ef:  nzt     sriv[3],x05ef
+05f0: cf 01         xmit    DATA_PORT,ivr
+05f1: bf 18         nzt     sriv,x05f8
+05f2: cf 02         xmit    CMD_PORT,ivr
+05f3: df 20         xmit    0h,driv[0]
+05f4: de 20         xmit    0h,driv[1]
+05f5: c9 2e         xmit    2eh,r11
+05f6: e4 dd         jmp     x04dd
+05f7: e3 b8 x05f7:  jmp     x03b8
+05f8: c0 09 x05f8:  xmit    9h,aux
+05f9: e3 50         jmp     x0350
+05fa: e6 00         jmp     x0600
+05fb: 00 00         nop     
+05fc: 00 00         nop     
+05fd: 00 00         nop     
+05fe: 00 00         nop     
+05ff: 00 00         nop     
+0600: cf 5b x0600:  xmit    CSR2,ivr
+0601: c2 40         xmit    40h,r2
+0602: 02 1f         move    r2,driv
+0603: c9 2f         xmit    2fh,r11
+0604: e4 cc         jmp     x04cc
+0605: c2 00 x0605:  xmit    0h,r2
+0606: c9 30         xmit    30h,r11
+0607: e4 f6         jmp     x04f6
+0608: a0 00 x0608:  nzt     aux,x0600
+0609: c9 31         xmit    31h,r11
+060a: e7 6d         jmp     x076d
+060b: c2 01 x060b:  xmit    1h,r2
+060c: c9 32         xmit    32h,r11
+060d: e4 f6         jmp     x04f6
+060e: a0 00 x060e:  nzt     aux,x0600
+060f: cf 02         xmit    CMD_PORT,ivr
+0610: db 21         xmit    1h,driv[4]
+0611: db 20         xmit    0h,driv[4]
+0612: cf 5f x0612:  xmit    FDC_DATA,ivr
+0613: cf 5f         xmit    FDC_DATA,ivr
+0614: cf 5a x0614:  xmit    CSR1,ivr
+0615: be 34         nzt     sriv[1],x0614
+0616: cf 03         xmit    STATUS_PORT,ivr
+0617: b9 39         nzt     sriv[6],x0619
+0618: e4 5c         jmp     x045c
+0619: cf 5f x0619:  xmit    FDC_DATA,ivr
+061a: 1f 02         move    sriv,r2
+061b: cf 3f         xmit    IO-F,ivr
+061c: 02 1f         move    r2,driv
+061d: cf 02         xmit    CMD_PORT,ivr
+061e: da 21         xmit    1h,driv[5]
+061f: da 20         xmit    0h,driv[5]
+0620: cf 03         xmit    STATUS_PORT,ivr
+0621: ba 23         nzt     sriv[5],x0623
+0622: e6 25         jmp     x0625
+0623: c7 ff x0623:  xmit    0ffh,ivl
+0624: e6 12         jmp     x0612
+0625: cf 5f x0625:  xmit    FDC_DATA,ivr
+0626: cf 5f         xmit    FDC_DATA,ivr
+0627: cf 5a x0627:  xmit    CSR1,ivr
+0628: be 27         nzt     sriv[1],x0627
+0629: cf 5f         xmit    FDC_DATA,ivr
+062a: cf 5a         xmit    CSR1,ivr
+062b: d9 20         xmit    0h,driv[6]
+062c: cf 5f         xmit    FDC_DATA,ivr
+062d: cf 5f         xmit    FDC_DATA,ivr
+062e: cf 5a x062e:  xmit    CSR1,ivr
+062f: be 2e         nzt     sriv[1],x062e
+0630: cf 5f         xmit    FDC_DATA,ivr
+0631: e6 40         jmp     x0640
+0632: 00 00         nop     
+0633: 00 00         nop     
+0634: 00 00         nop     
+0635: 00 00         nop     
+0636: 00 00         nop     
+0637: 00 00         nop     
+0638: 00 00         nop     
+0639: 00 00         nop     
+063a: 00 00         nop     
+063b: 00 00         nop     
+063c: 00 00         nop     
+063d: 00 00         nop     
+063e: 00 00         nop     
+063f: 00 00         nop     
+0640: cf 5f x0640:  xmit    FDC_DATA,ivr
+0641: cf 5f         xmit    FDC_DATA,ivr
+0642: cf 5a x0642:  xmit    CSR1,ivr
+0643: be 22         nzt     sriv[1],x0642
+0644: cf 5f         xmit    FDC_DATA,ivr
+0645: bf 10         nzt     sriv,x0650
+0646: cf 5f         xmit    FDC_DATA,ivr
+0647: cf 5f         xmit    FDC_DATA,ivr
+0648: cf 5a x0648:  xmit    CSR1,ivr
+0649: be 28         nzt     sriv[1],x0648
+064a: cf 5f         xmit    FDC_DATA,ivr
+064b: bf 10         nzt     sriv,x0650
+064c: c2 40         xmit    40h,r2
+064d: cf 5b         xmit    CSR2,ivr
+064e: 02 1f         move    r2,driv
+064f: e4 4b         jmp     x044b
+0650: e5 f8 x0650:  jmp     x05f8
+0651: c0 00 x0651:  xmit    0h,aux
+0652: cf 4b         xmit    VAL3,ivr
+0653: 00 7b         move    aux,driv[6:4]
+0654: cf 5c         xmit    CSR3,ivr
+0655: 00 7e         move    aux,driv[3:1]
+0656: cf 4c         xmit    VAL4,ivr
+0657: e3 cf         jmp     x03cf
+0658: cf 5c x0658:  xmit    CSR3,ivr
+0659: c0 01         xmit    1h,aux
+065a: a5 5d         nzt     r5,x065d
+065b: 00 5b         move    aux,driv[5:4]
+065c: e6 61         jmp     x0661
+065d: c0 02 x065d:  xmit    2h,aux
+065e: 00 5b         move    aux,driv[5:4]
+065f: cf 4a         xmit    VAL2,ivr
+0660: da 20         xmit    0h,driv[5]
+0661: cf 5a x0661:  xmit    CSR1,ivr
+0662: c0 00         xmit    0h,aux
+0663: bf 25         nzt     sriv[0],x0665
+0664: e7 c0         jmp     x07c0
+0665: cf 5a x0665:  xmit    CSR1,ivr
+0666: bf 28         nzt     sriv[0],x0668
+0667: e6 61         jmp     x0661
+0668: c0 02 x0668:  xmit    2h,aux
+0669: e7 c0         jmp     x07c0
+066a: c0 01 x066a:  xmit    1h,aux
+066b: cf 51         xmit    VAL9,ivr
+066c: df 00         xmit    0h,driv
+066d: cf 5d         xmit    CSR4,ivr
+066e: 18 21         move    sriv[7],r1
+066f: 21 01         add     r1,r1
+0670: cf 51         xmit    VAL9,ivr
+0671: 01 3b         move    r1,driv[4]
+0672: cf 5d         xmit    CSR4,ivr
+0673: 1a 21         move    sriv[5],r1
+0674: 21 01         add     r1,r1
+0675: cf 51         xmit    VAL9,ivr
+0676: 01 39         move    r1,driv[6]
+0677: cf 5d         xmit    CSR4,ivr
+0678: 1b 21         move    sriv[4],r1
+0679: 21 01         add     r1,r1
+067a: cf 51         xmit    VAL9,ivr
+067b: 01 3c         move    r1,driv[3]
+067c: cf 5a         xmit    CSR1,ivr
+067d: 1f 21         move    sriv[0],r1
+067e: 21 01         add     r1,r1
+067f: cf 51         xmit    VAL9,ivr
+0680: 01 3a         move    r1,driv[5]
+0681: 1f 01         move    sriv,r1
+0682: c0 39         xmit    39h,aux
+0683: 25 0f         add     r5,ivr
+0684: 01 00         move    r1,aux
+0685: 25 1f         add     r5,driv
+0686: e7 c0         jmp     x07c0
+0687: cf 31 x0687:  xmit    IO-1,ivr
+0688: e6 a0         jmp     x06a0
+0689: 00 00         nop     
+068a: 00 00         nop     
+068b: 00 00         nop     
+068c: 00 00         nop     
+068d: 00 00         nop     
+068e: 00 00         nop     
+068f: 00 00         nop     
+0690: 00 00         nop     
+0691: 00 00         nop     
+0692: 00 00         nop     
+0693: 00 00         nop     
+0694: 00 00         nop     
+0695: 00 00         nop     
+0696: 00 00         nop     
+0697: 00 00         nop     
+0698: 00 00         nop     
+0699: 00 00         nop     
+069a: 00 00         nop     
+069b: 00 00         nop     
+069c: 00 00         nop     
+069d: 00 00         nop     
+069e: 00 00         nop     
+069f: 00 00         nop     
+06a0: ba 22 x06a0:  nzt     sriv[5],x06a2
+06a1: e6 b2         jmp     x06b2
+06a2: da 20 x06a2:  xmit    0h,driv[5]
+06a3: cf 31 x06a3:  xmit    IO-1,ivr
+06a4: 1a 20         move    sriv[5],aux
+06a5: a0 a7         nzt     aux,x06a7
+06a6: e6 a3         jmp     x06a3
+06a7: cf 3d x06a7:  xmit    IO-D,ivr
+06a8: 1f 00         move    sriv,aux
+06a9: 01 0f         move    r1,ivr
+06aa: 00 1f         move    aux,driv
+06ab: c0 01         xmit    1h,aux
+06ac: 21 01         add     r1,r1
+06ad: 22 02         add     r2,r2
+06ae: a2 b1         nzt     r2,x06b1
+06af: c0 00         xmit    0h,aux
+06b0: e6 b3         jmp     x06b3
+06b1: e6 87 x06b1:  jmp     x0687
+06b2: c0 01 x06b2:  xmit    1h,aux
+06b3: e7 c0 x06b3:  jmp     x07c0
+06b4: cf 4a x06b4:  xmit    VAL2,ivr
+06b5: 1c 25         move    sriv[3],r5
+06b6: a5 be         nzt     r5,x06be
+06b7: c1 00         xmit    0h,r1
+06b8: cf 48         xmit    VAL0,ivr
+06b9: 1f 02         move    sriv,r2
+06ba: c3 00         xmit    0h,r3
+06bb: cf 4c         xmit    VAL4,ivr
+06bc: 1f 04         move    sriv,r4
+06bd: e6 c6         jmp     x06c6
+06be: cf 52 x06be:  xmit    VALA,ivr
+06bf: 1f 01         move    sriv,r1
+06c0: cf 49         xmit    VAL1,ivr
+06c1: 1f 02         move    sriv,r2
+06c2: cf 4b         xmit    VAL3,ivr
+06c3: 1f 03         move    sriv,r3
+06c4: cf 4c         xmit    VAL4,ivr
+06c5: 1f 04         move    sriv,r4
+06c6: c0 07 x06c6:  xmit    7h,aux
+06c7: 41 01         and     r1,r1
+06c8: 43 03         and     r3,r3
+06c9: c0 ff         xmit    0ffh,aux
+06ca: 63 03         xor     r3,r3
+06cb: 64 04         xor     r4,r4
+06cc: c0 01         xmit    1h,aux
+06cd: 24 04         add     r4,r4
+06ce: 08 00         move    ovf,aux
+06cf: 23 03         add     r3,r3
+06d0: 04 00         move    r4,aux
+06d1: 22 04         add     r2,r4
+06d2: 08 05         move    ovf,r5
+06d3: 03 00         move    r3,aux
+06d4: 21 00         add     r1,aux
+06d5: 25 03         add     r5,r3
+06d6: a3 d9         nzt     r3,x06d9
+06d7: a4 d9         nzt     r4,x06d9
+06d8: e6 ff         jmp     x06ff
+06d9: c0 80 x06d9:  xmit    80h,aux
+06da: 43 00         and     r3,aux
+06db: a0 e6         nzt     aux,x06e6
+06dc: cf 5c         xmit    CSR3,ivr
+06dd: d8 20         xmit    0h,driv[7]
+06de: c0 ff         xmit    0ffh,aux
+06df: 63 03         xor     r3,r3
+06e0: 64 04         xor     r4,r4
+06e1: c0 01         xmit    1h,aux
+06e2: 24 04         add     r4,r4
+06e3: 08 00         move    ovf,aux
+06e4: 23 03         add     r3,r3
+06e5: e6 e8         jmp     x06e8
+06e6: cf 5c x06e6:  xmit    CSR3,ivr
+06e7: d8 21         xmit    1h,driv[7]
+06e8: c0 01 x06e8:  xmit    1h,aux
+06e9: c1 f8         xmit    0f8h,r1
+06ea: cf 5c         xmit    CSR3,ivr
+06eb: d9 21         xmit    1h,driv[6]
+06ec: 21 01 x06ec:  add     r1,r1
+06ed: a1 ec         nzt     r1,x06ec
+06ee: cf 5c         xmit    CSR3,ivr
+06ef: d9 20         xmit    0h,driv[6]
+06f0: c2 fe         xmit    0feh,r2
+06f1: c1 d0         xmit    0d0h,r1
+06f2: cf 4a         xmit    VAL2,ivr
+06f3: bc 36         nzt     sriv[3],x06f6
+06f4: c1 00         xmit    0h,r1
+06f5: c2 cf         xmit    0cfh,r2
+06f6: c0 01 x06f6:  xmit    1h,aux
+06f7: 21 01 x06f7:  add     r1,r1
+06f8: a1 f7         nzt     r1,x06f7
+06f9: 22 02         add     r2,r2
+06fa: a2 f7         nzt     r2,x06f7
+06fb: 24 04         add     r4,r4
+06fc: a4 e8         nzt     r4,x06e8
+06fd: 23 03         add     r3,r3
+06fe: a3 e8         nzt     r3,x06e8
+06ff: cf 4a x06ff:  xmit    VAL2,ivr
+0700: 1c 25 x0700:  move    sriv[3],r5
+0701: a5 03         nzt     r5,x0703
+0702: e7 04         jmp     x0704
+0703: c5 01 x0703:  xmit    1h,r5
+0704: a5 06 x0704:  nzt     r5,x0706
+0705: e7 51         jmp     x0751
+0706: cf 5d x0706:  xmit    CSR4,ivr
+0707: bb 29         nzt     sriv[4],x0709
+0708: e7 0c         jmp     x070c
+0709: cf 5d x0709:  xmit    CSR4,ivr
+070a: bb 29         nzt     sriv[4],x0709
+070b: e7 51         jmp     x0751
+070c: cf 4c x070c:  xmit    VAL4,ivr
+070d: 1f 00         move    sriv,aux
+070e: a5 12         nzt     r5,x0712
+070f: cf 48         xmit    VAL0,ivr
+0710: 00 1f         move    aux,driv
+0711: e7 18         jmp     x0718
+0712: cf 49 x0712:  xmit    VAL1,ivr
+0713: 00 1f         move    aux,driv
+0714: cf 4b         xmit    VAL3,ivr
+0715: 1f 00         move    sriv,aux
+0716: cf 52         xmit    VALA,ivr
+0717: 00 1f         move    aux,driv
+0718: c0 00 x0718:  xmit    0h,aux
+0719: e7 c0         jmp     x07c0
+071a: 01 0f x071a:  move    r1,ivr
+071b: 1f 00         move    sriv,aux
+071c: cf 32 x071c:  xmit    IO-2,ivr
+071d: 00 1f         move    aux,driv
+071e: cf 30         xmit    IO-0,ivr
+071f: dd 21         xmit    1h,driv[2]
+0720: cf 30 x0720:  xmit    IO-0,ivr
+0721: 1d 20         move    sriv[2],aux
+0722: a0 20         nzt     aux,x0720
+0723: e7 c0         jmp     x07c0
+0724: cf 5c x0724:  xmit    CSR3,ivr
+0725: db 40         xmit    0h,driv[5:4]
+0726: e7 c0         jmp     x07c0
+0727: cf 4a x0727:  xmit    VAL2,ivr
+0728: 85 2a         xec     x072a,r5
+0729: e7 c0         jmp     x07c0
+072a: df 21 x072a:  xmit    1h,driv[0]
+072b: de 21         xmit    1h,driv[1]
+072c: cf 4a x072c:  xmit    VAL2,ivr
+072d: 1f 40         move    sriv[1:0],aux
+072e: 80 34         xec     x0734,aux
+072f: cf 3e         xmit    IO-E,ivr
+0730: 00 3a         move    aux,driv[5]
+0731: cf 02         xmit    CMD_PORT,ivr
+0732: 00 39         move    aux,driv[6]
+0733: e7 c0         jmp     x07c0
+0734: c0 00 x0734:  xmit    0h,aux
+0735: c0 01         xmit    1h,aux
+0736: c0 01         xmit    1h,aux
+0737: c0 01         xmit    1h,aux
+0738: a5 3b x0738:  nzt     r5,x073b
+0739: c0 00         xmit    0h,aux
+073a: e7 c0         jmp     x07c0
+073b: cf 03 x073b:  xmit    STATUS_PORT,ivr
+073c: e7 40         jmp     x0740
+073d: 00 00         nop     
+073e: 00 00         nop     
+073f: 00 00         nop     
+0740: bb 25 x0740:  nzt     sriv[4],x0745
+0741: 98 23         xec     x0743,sriv[7]
+0742: e7 c0         jmp     x07c0
+0743: c0 03 x0743:  xmit    3h,aux
+0744: c0 01         xmit    1h,aux
+0745: 98 27 x0745:  xec     x0747,sriv[7]
+0746: e7 c0         jmp     x07c0
+0747: c0 02 x0747:  xmit    2h,aux
+0748: c0 04         xmit    4h,aux
+0749: cf 50 x0749:  xmit    VAL8,ivr
+074a: c0 01         xmit    1h,aux
+074b: 3f 1f         add     sriv,driv
+074c: cf 50         xmit    VAL8,ivr
+074d: bf 10         nzt     sriv,x0750
+074e: c0 04         xmit    4h,aux
+074f: e3 50         jmp     x0350
+0750: e4 f9 x0750:  jmp     x04f9
+0751: c0 01 x0751:  xmit    1h,aux
+0752: c1 00         xmit    0h,r1
+0753: c2 50         xmit    50h,r2
+0754: 21 01 x0754:  add     r1,r1
+0755: a1 54         nzt     r1,x0754
+0756: 22 02         add     r2,r2
+0757: a2 54         nzt     r2,x0754
+0758: e7 0c         jmp     x070c
+0759: c0 01 x0759:  xmit    1h,aux
+075a: c1 80         xmit    80h,r1
+075b: 21 01 x075b:  add     r1,r1
+075c: a1 5b         nzt     r1,x075b
+075d: e7 c0         jmp     x07c0
+075e: cf 5a x075e:  xmit    CSR1,ivr
+075f: e7 60         jmp     x0760
+0760: bf 22 x0760:  nzt     sriv[0],x0762
+0761: e5 03         jmp     x0503
+0762: cf 5b x0762:  xmit    CSR2,ivr
+0763: d9 21         xmit    1h,driv[6]
+0764: e2 32         jmp     x0232
+0765: c0 01 x0765:  xmit    1h,aux
+0766: c1 00         xmit    0h,r1
+0767: c2 20         xmit    20h,r2
+0768: 21 01 x0768:  add     r1,r1
+0769: a1 68         nzt     r1,x0768
+076a: 22 02         add     r2,r2
+076b: a2 68         nzt     r2,x0768
+076c: e1 4b x076c:  jmp     x014b
+076d: cf 5b x076d:  xmit    CSR2,ivr
+076e: d9 21         xmit    1h,driv[6]
+076f: c2 ee         xmit    0eeh,r2
+0770: c0 01 x0770:  xmit    1h,aux
+0771: cf 5f         xmit    FDC_DATA,ivr
+0772: cf 5f         xmit    FDC_DATA,ivr
+0773: cf 5a x0773:  xmit    CSR1,ivr
+0774: be 33         nzt     sriv[1],x0773
+0775: cf 5f         xmit    FDC_DATA,ivr
+0776: 22 02         add     r2,r2
+0777: a2 70         nzt     r2,x0770
+0778: e7 c0         jmp     x07c0
+0779: cf 03 x0779:  xmit    STATUS_PORT,ivr
+077a: bc 3a x077a:  nzt     sriv[3],x077a
+077b: cf 02         xmit    CMD_PORT,ivr
+077c: dc 21         xmit    1h,driv[3]
+077d: cf 03         xmit    STATUS_PORT,ivr
+077e: bc 3e x077e:  nzt     sriv[3],x077e
+077f: e4 a3         jmp     x04a3
+0780: cf 03 x0780:  xmit    STATUS_PORT,ivr
+0781: bc 21 x0781:  nzt     sriv[3],x0781
+0782: cf 02         xmit    CMD_PORT,ivr
+0783: dc 21         xmit    1h,driv[3]
+0784: cf 03         xmit    STATUS_PORT,ivr
+0785: bc 25 x0785:  nzt     sriv[3],x0785
+0786: cf 03         xmit    STATUS_PORT,ivr
+0787: bc 27 x0787:  nzt     sriv[3],x0787
+0788: e5 ec         jmp     x05ec
+0789: cf 03 x0789:  xmit    STATUS_PORT,ivr
+078a: bc 2a x078a:  nzt     sriv[3],x078a
+078b: cf 03         xmit    STATUS_PORT,ivr
+078c: bc 2c x078c:  nzt     sriv[3],x078c
+078d: e3 b4         jmp     x03b4
+078e: a5 90 x078e:  nzt     r5,x0790
+078f: e1 2e         jmp     x012e
+0790: cf 5d x0790:  xmit    CSR4,ivr
+0791: bb 33         nzt     sriv[4],x0793
+0792: e1 2e         jmp     x012e
+0793: cf 5d x0793:  xmit    CSR4,ivr
+0794: bb 33         nzt     sriv[4],x0793
+0795: e1 2e         jmp     x012e
+0796: cf 4a x0796:  xmit    VAL2,ivr
+0797: da 20         xmit    0h,driv[5]
+0798: e0 1f         jmp     x001f
+0799: a0 9b x0799:  nzt     aux,x079b
+079a: e2 09         jmp     x0209
+079b: e2 0b x079b:  jmp     x020b
+079c: ec 20         jmp     x0c20
+079d: e0 1f         jmp     x001f
+079e: 28 00         add     ovf,aux
+079f: 00 00         nop     
+07a0: 00 00         nop     
+07a1: 00 00         nop     
+07a2: 07 2f         dw      72fh
+07a3: 90 2c         xec     x07ac,sliv[7]
+07a4: 54 00         and     sliv[10:3],aux
+07a5: d1 c1         xmit    1h,dliv[11:6]
+07a6: b4 9d         nzt     sliv[6:3],x07bd
+07a7: a9 6c         nzt     r11,x076c
+07a8: 1f d4         move    sriv[5:0],dliv[8:3]
+07a9: 9d 15         xec     x07b5,sriv[9:2]
+07aa: 02 7c         move    r2,driv[5:3]
+07ab: 14 15         move    sliv[10:3],dliv[9:2]
+07ac: 18 8f x07ac:  move    sriv[10:7],ivr
+07ad: 00 08         dw      8h
+07ae: 71 1d         xor     sliv[13:6],driv[9:2]
+07af: 54 08         dw      5408h
+07b0: 00 0a         dw      0ah
+07b1: 5d 1e         and     sriv[9:2],driv[8:1]
+07b2: 51 11         and     sliv[13:6],dliv[13:6]
+07b3: ef 1d         jmp     x0f1d
+07b4: 05 d9         move    r5,driv[11:6]
+07b5: 6d 1d x07b5:  dw      6d1dh
+07b6: 18 16         move    sriv[14:7],dliv[8:1]
+07b7: 58 57         and     sriv[8:7],dliv[1:0]
+07b8: 28 1f         add     ovf,driv
+07b9: 1f 9f         move    sriv[3:0],driv[3:0]
+07ba: 03 99         move    r3,driv[9:6]
+07bb: 1d 45         move    sriv[3:2],r5
+07bc: 08 1f         move    ovf,driv
+07bd: 6a 1d x07bd:  dw      6a1dh
+07be: e8 19         jmp     x0819
+07bf: 5d d5         and     sriv[7:2],dliv[7:2]
+07c0: 89 c0 x07c0:  xec     x07c0,r11
+07c1: e0 65         jmp     x0065
+07c2: e0 77         jmp     x0077
+07c3: e0 79         jmp     x0079
+07c4: e0 82         jmp     x0082
+07c5: e0 84         jmp     x0084
+07c6: e0 a2         jmp     x00a2
+07c7: e0 b3         jmp     x00b3
+07c8: e0 b7         jmp     x00b7
+07c9: e0 bb         jmp     x00bb
+07ca: e0 be         jmp     x00be
+07cb: e0 c2         jmp     x00c2
+07cc: e0 c4         jmp     x00c4
+07cd: e0 c8         jmp     x00c8
+07ce: e0 d3         jmp     x00d3
+07cf: e0 d7         jmp     x00d7
+07d0: e0 dd         jmp     x00dd
+07d1: e0 e1         jmp     x00e1
+07d2: e0 f0         jmp     x00f0
+07d3: e0 f5         jmp     x00f5
+07d4: e1 21         jmp     x0121
+07d5: e1 26         jmp     x0126
+07d6: e1 2c         jmp     x012c
+07d7: e1 2e         jmp     x012e
+07d8: e1 35         jmp     x0135
+07d9: e1 38         jmp     x0138
+07da: e1 67         jmp     x0167
+07db: e1 6e         jmp     x016e
+07dc: e1 76         jmp     x0176
+07dd: e1 78         jmp     x0178
+07de: e1 7a         jmp     x017a
+07df: e1 80         jmp     x0180
+07e0: e2 21         jmp     x0221
+07e1: e2 2d         jmp     x022d
+07e2: e2 31         jmp     x0231
+07e3: e3 2b         jmp     x032b
+07e4: e3 35         jmp     x0335
+07e5: e3 3a         jmp     x033a
+07e6: e3 3e         jmp     x033e
+07e7: e3 4a         jmp     x034a
+07e8: e3 74         jmp     x0374
+07e9: e3 76         jmp     x0376
+07ea: e3 d8         jmp     x03d8
+07eb: e3 e4         jmp     x03e4
+07ec: e3 e7         jmp     x03e7
+07ed: e5 a7         jmp     x05a7
+07ee: e5 f7         jmp     x05f7
+07ef: e6 05         jmp     x0605
+07f0: e6 08         jmp     x0608
+07f1: e6 0b         jmp     x060b
+07f2: e6 0e         jmp     x060e
+07f3: 22 f7         add     r2,dliv[6:0]
+07f4: e6 05         jmp     x0605
+07f5: e6 08         jmp     x0608
+07f6: e6 0b         jmp     x060b
+07f7: a1 00         nzt     r1,x0700
+07f8: 00 00         nop     
+07f9: d1 c1         xmit    1h,dliv[11:6]
+07fa: b4 9d         nzt     sliv[6:3],x07fd
+07fb: a9 6c         nzt     r11,x076c
+07fc: 63 7c         xor     r3,driv[5:3]
+07fd: 61 da x07fd:  xor     r1,driv[10:5]
+07fe: 4d d4         dw      4dd4h
+07ff: ac a7         dw      0aca7h
